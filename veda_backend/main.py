@@ -1,5 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import models               # <-- Tambahkan ini
+from database import engine # <-- Tambahkan ini
+
+# Perintah ajaib untuk membuat tabel secara otomatis di MySQL
+models.Base.metadata.create_all(bind=engine)
 
 # Inisialisasi Aplikasi FastAPI
 app = FastAPI(
