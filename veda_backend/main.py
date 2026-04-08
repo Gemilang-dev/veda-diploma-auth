@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import models               # <-- Tambahkan ini
 from database import engine # <-- Tambahkan ini
 from routes import auth
+from routes import issuer
 
 # Perintah ajaib untuk membuat tabel secara otomatis di MySQL
 models.Base.metadata.create_all(bind=engine)
@@ -25,6 +26,7 @@ app.add_middleware(
 
 # [BARU] Daftarkan router Auth ke server dengan prefix /api/auth
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+app.include_router(issuer.router, prefix="/api/issuer", tags=["Issuer (Kampus)"]) #
 
 
 # Endpoint Root (Untuk mengecek apakah server menyala)

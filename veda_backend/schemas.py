@@ -23,3 +23,23 @@ class AdminResponse(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+# ==========================================
+# SCHEMAS UNTUK ISSUER (KAMPUS)
+# ==========================================
+class IssuerCreate(BaseModel):
+    university_name: str
+    email: str
+    password: str
+    wallet_address: str
+
+class IssuerResponse(BaseModel):
+    id_issuer: int
+    created_by: int
+    university_name: str
+    email: str
+    wallet_address: str
+    status: str
+
+    class Config:
+        from_attributes = True
