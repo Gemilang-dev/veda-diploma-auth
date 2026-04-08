@@ -4,8 +4,7 @@ import models
 import schemas
 from database import get_db
 # Impor satpam dan alat pembuat hash dari auth.py
-from routes.auth import get_current_admin, get_password_hash 
-
+from routes.auth import get_current_admin, get_password_hash, verify_password, create_access_token
 router = APIRouter()
 
 # ==========================================
@@ -40,3 +39,29 @@ def register_issuer(
     db.commit()
     db.refresh(new_issuer)
     return new_issuer
+
+# ==========================================
+# ENDPOINT: LOGIN KAMPUS (ISSUER)
+# ==========================================
+@router.post("/login", response_model=schemas.Token)
+def login_issuer(credentials: schemas.IssuerLogin, db: Session = Depends(get_db)):
+    # 1. Cari data kampus berdasarkan email
+    issuer = db.query(models.Issuer).filter(models.Issuer.email == credentials.email).first()
+    
+    # 2. Jika kampus tidak ditemukan atau password salah
+    if not issuer or not verify_password(credentials.password, issuer.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email atau password salah!"
+        )
+        
+    # 3. Jika berhasil, buatkan Token JWT khusus untuk Kampus
+    access_token = create_access_token(
+        data={
+            "sub": issuer.email, 
+            "id_issuer": issuer.id_issuer, 
+            "role": "campus"  # PENTING: Penanda agar peladen tahu ini bukan admin
+        }
+    )
+    
+    return {"access_token": access_token, "token_type": "bearer"}

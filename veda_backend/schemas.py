@@ -33,6 +33,10 @@ class IssuerCreate(BaseModel):
     password: str
     wallet_address: str
 
+class IssuerLogin(BaseModel):
+    email: str
+    password: str
+
 class IssuerResponse(BaseModel):
     id_issuer: int
     created_by: int
