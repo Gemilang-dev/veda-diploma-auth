@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form # <-- Tambahkan Form di sini
 from sqlalchemy.orm import Session
 import models
 import schemas
@@ -41,15 +41,21 @@ def register_issuer(
     return new_issuer
 
 # ==========================================
-# ENDPOINT: LOGIN KAMPUS (ISSUER)
+# ENDPOINT: LOGIN KAMPUS (Menerima Form Data dari Swagger UI)
 # ==========================================
 @router.post("/login", response_model=schemas.Token)
-def login_issuer(credentials: schemas.IssuerLogin, db: Session = Depends(get_db)):
-    # 1. Cari data kampus berdasarkan email
-    issuer = db.query(models.Issuer).filter(models.Issuer.email == credentials.email).first()
+def login_issuer(
+    # Swagger UI selalu mengirim variabel bernama 'username', 
+    # jadi kita tangkap 'username' tapi kita anggap sebagai email
+    username: str = Form(...), 
+    password: str = Form(...), 
+    db: Session = Depends(get_db)
+):
+    # 1. Cari data kampus berdasarkan email (menggunakan data dari kolom username Swagger)
+    issuer = db.query(models.Issuer).filter(models.Issuer.email == username).first()
     
     # 2. Jika kampus tidak ditemukan atau password salah
-    if not issuer or not verify_password(credentials.password, issuer.password_hash):
+    if not issuer or not verify_password(password, issuer.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email atau password salah!"
@@ -60,7 +66,7 @@ def login_issuer(credentials: schemas.IssuerLogin, db: Session = Depends(get_db)
         data={
             "sub": issuer.email, 
             "id_issuer": issuer.id_issuer, 
-            "role": "campus"  # PENTING: Penanda agar peladen tahu ini bukan admin
+            "role": "kampus"
         }
     )
     

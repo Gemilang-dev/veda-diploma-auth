@@ -25,8 +25,18 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30 # Token hangus dalam 30 menit
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+# Di dalam routes/auth.py
 
+oauth2_scheme_admin = OAuth2PasswordBearer(
+    tokenUrl="/api/auth/login",
+    scheme_name="Login_SuperAdmin"  # <-- [BARU] Memberi nama unik
+)
+
+# Gembok untuk Kampus/Issuer (Pintu 2)
+oauth2_scheme_issuer = OAuth2PasswordBearer(
+    tokenUrl="/api/issuer/login",
+    scheme_name="Login_Kampus"      # <-- [BARU] Memberi nama unik
+)
 
 # Fungsi pembantu untuk membuat Token JWT
 def create_access_token(data: dict):
@@ -45,7 +55,7 @@ def get_password_hash(password: str):
     return pwd_context.hash(password)
 
 # FUNGSI SATPAM: Mengecek dan membongkar isi Token JWT dari Frontend
-def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def get_current_admin(token: str = Depends(oauth2_scheme_admin), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Token tidak valid atau sudah kedaluwarsa",
@@ -66,6 +76,33 @@ def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends
         raise credentials_exception
     
     return admin
+
+
+# FUNGSI SATPAM KHUSUS KAMPUS: Mengecek apakah token valid dan bertuliskan "kampus"
+def get_current_issuer(token: str = Depends(oauth2_scheme_issuer), db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Token tidak valid atau Anda bukan akun Kampus!",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        role: str = payload.get("role") # Mengambil label role dari dalam koper token
+        
+        # Jika email kosong atau role-nya bukan "kampus", tendang keluar!
+        if email is None or role != "kampus":
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    
+    # Pastikan akun kampus tersebut masih ada di database
+    issuer = db.query(models.Issuer).filter(models.Issuer.email == email).first()
+    if issuer is None:
+        raise credentials_exception
+    
+    return issuer
+
 
 # ==========================================
 # ENDPOINT 1: REGISTER ADMIN 

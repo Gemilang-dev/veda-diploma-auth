@@ -1,5 +1,7 @@
 from sqlalchemy import Column, Integer, String, Enum, ForeignKey
 from database import Base
+import datetime # Pastikan ini ada di bagian atas file jika belum ada
+from sqlalchemy import DateTime # Pastikan DateTime juga diimpor dari sqlalchemy
 
 # 1. Tabel Super Admin (Pihak yang mendaftarkan kampus)
 class Admin(Base):
@@ -29,3 +31,24 @@ class Issuer(Base):
     
     # Tipe ENUM untuk status aktif/inaktif
     status = Column(Enum('Active', 'Inactive', name="issuer_status_enum"), default='Active')
+
+# ==========================================
+# 3. TABEL INDEKS IJAZAH (Zero-Data Storage)
+# ==========================================
+class DiplomaRecord(Base):
+    __tablename__ = "tbl_diploma_record"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    diploma_id = Column(String(50), unique=True, index=True, nullable=False)
+    student_id = Column(String(50), nullable=False)
+    
+    # Struk bukti dari Blockchain Ethereum
+    tx_hash = Column(String(100), nullable=False, unique=True) 
+    
+    # Relasi ke tabel kampus
+    issued_by = Column(
+        Integer, 
+        ForeignKey("tbl_issuer.id_issuer", ondelete="RESTRICT", onupdate="CASCADE"),
+        nullable=False
+    )
+    issued_at = Column(DateTime, default=datetime.datetime.utcnow)
