@@ -1,11 +1,54 @@
-# Environments
+# ==========================================
+# 🚨 CRITICAL SECURITY (DO NOT COMMIT)
+# ==========================================
 .env
+.env.*
+*.pem
+*.key
+
+# ==========================================
+# 🐍 PYTHON & FASTAPI (Backend)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
 venv/
 env/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+veda_backend/venv/
 
-# Python
-__pycache__/
-*.pyc
+# ==========================================
+# 🌐 JAVASCRIPT & NODE.JS (Frontend)
+# ==========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.next/
+out/
+build/
+dist/
 
-# Database
-*.sqlite3
+# ==========================================
+# ⛓️ WEB3 & SMART CONTRACTS (Hardhat/Foundry/Remix)
+# ==========================================
+artifacts/
+.deps/
+.states/
+cache/
+typechain/
+typechain-types/
+coverage/
+coverage.json
+broadcast/
+
+# ==========================================
+# 💻 OS & IDE CONFIGURATIONS
+# ==========================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
