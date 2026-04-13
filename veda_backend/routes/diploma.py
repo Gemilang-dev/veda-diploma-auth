@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
+import os
 import uuid
 import hashlib 
 import models
 import schemas
+from fastapi import APIRouter, HTTPException, status, Depends
+from sqlalchemy.orm import Session
 from database import get_db
 from routes.auth import get_current_issuer
 
