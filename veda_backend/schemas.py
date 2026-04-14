@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from fastapi import Body
 
 # Schema untuk Frontend saat mengirim data pendaftaran Super Admin
 class AdminCreate(BaseModel):
@@ -59,6 +60,14 @@ class DiplomaCreate(BaseModel):
     student_name: str 
     univ_name: str
     gpa: float
+
+class DiplomaPrepareRequest(BaseModel):
+    diploma_number: str      # Nomor Ijazah (PIN)
+    student_name: str        # Nama Mahasiswa
+    student_id: str          # NIM
+    gpa: str                 # IPK
+    degree: str              # Gelar
+    id_issuer: int           # ID Kampus
 
 # Data yang dikembalikan oleh peladen setelah berhasil dicetak
 class DiplomaResponse(BaseModel):

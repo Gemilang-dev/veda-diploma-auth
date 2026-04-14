@@ -39,11 +39,19 @@ class DiplomaRecord(Base):
     __tablename__ = "tbl_diploma_record"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    diploma_id = Column(String(50), unique=True, index=True, nullable=False)
+    
+    # KOREKSI 1: String(66)
+    # Hash ijazah (SHA-256) ditambah awalan '0x' memiliki panjang persis 66 karakter.
+    # Jika menggunakan String(50), database akan menolak (Data too long for column).
+    diploma_id = Column(String(66), unique=True, index=True, nullable=False) 
+    
     student_id = Column(String(50), nullable=False)
     
-    # Struk bukti dari Blockchain Ethereum
-    tx_hash = Column(String(100), nullable=False, unique=True) 
+    # KOREKSI 2: nullable=True
+    # Saat Backend baru membuat Hash (status Pending), transaksi ke Blockchain belum terjadi.
+    # Jadi tx_hash ini harus boleh kosong (NULL) pada awalnya, dan baru diisi 
+    # setelah MetaMask berhasil mengirim transaksi.
+    tx_hash = Column(String(100), nullable=True, unique=True) 
     
     # Relasi ke tabel kampus
     issued_by = Column(
@@ -52,3 +60,9 @@ class DiplomaRecord(Base):
         nullable=False
     )
     issued_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    # TAMBAHAN: Status untuk melacak proses mempool Blockchain
+    status = Column(Enum('Pending', 'Success', 'Failed', name="diploma_status_enum"), default='Pending')
+
+    # (Opsional tapi disarankan) Relasi balik ke Issuer agar query lebih mudah
+    # issuer = relationship("Issuer", back_populates="diploma_records")
