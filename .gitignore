@@ -5,6 +5,9 @@
 .env.*
 *.pem
 *.key
+*.cert
+.secret
+secrets.json
 
 # ==========================================
 # 🐍 PYTHON & FASTAPI (Backend)
@@ -18,21 +21,35 @@ env/
 pip-log.txt
 pip-delete-this-directory.txt
 veda_backend/venv/
+# Local Database & Testing (Sangat penting agar data dummy tidak naik ke Git)
+*.sqlite3
+*.db
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+fastapi.log
 
 # ==========================================
-# 🌐 JAVASCRIPT & NODE.JS (Frontend)
+# 🌐 JAVASCRIPT & NODE.JS (Frontend - React/Vite)
 # ==========================================
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 .next/
 out/
 build/
 dist/
+dist-ssr/
+# Vite Caches & Linting
+.eslintcache
+node_modules/.vite/
+.vercel/
 
 # ==========================================
-# ⛓️ WEB3 & SMART CONTRACTS (Hardhat/Foundry/Remix)
+# ⛓️ WEB3 & SMART CONTRACTS (Hardhat/Foundry)
 # ==========================================
 artifacts/
 .deps/
@@ -43,12 +60,22 @@ typechain-types/
 coverage/
 coverage.json
 broadcast/
+# Laporan Gas & Deployment (Mencegah riwayat deploy lokal terbaca publik)
+ignition/deployments/
+gas-report.txt
+slither.db
+keystore/
 
 # ==========================================
 # 💻 OS & IDE CONFIGURATIONS
 # ==========================================
 .DS_Store
+.AppleDouble
+.LSOverride
 Thumbs.db
+ehthumbs.db
 .vscode/
 .idea/
 *.swp
+*.swo
+*~
