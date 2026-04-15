@@ -3,9 +3,9 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 import { verifyDiplomaOnChain } from '../services/web3';
 
 const Verify = () => {
-    // State Management
+    // 1. State Management
     const [scannedHash, setScannedHash] = useState('');
-    const [verificationStatus, setVerificationStatus] = useState('idle'); // 'idle', 'loading', 'valid', 'invalid', 'revoked'
+    const [verificationStatus, setVerificationStatus] = useState('idle'); 
     const [diplomaData, setDiplomaData] = useState(null);
     const [errorMessage, setErrorMessage] = useState('');
 
@@ -15,47 +15,66 @@ const Verify = () => {
         "function verifyDiploma(bytes32 _diplomaHash) external view returns (bool isValid, bool isRevoked, uint256 issuedAt)"
     ];
 
-    // Initialize QR Code Scanner on component mount
+    // 2. Flawless Scanner Initialization
     useEffect(() => {
-        const scanner = new Html5QrcodeScanner(
-            "qr-reader",
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            false
-        );
+        let scanner = null;
+        let timeoutId = null;
 
-        // Success callback when QR is detected or image uploaded
-        const onScanSuccess = (decodedText) => {
-            // Stop scanning once a code is found to prevent spamming the blockchain
-            scanner.clear();
-            
-            // Extract Hash from URL (e.g., http://localhost:5173/verify/0xabc123... -> 0xabc123...)
-            // If it's already a raw hash, this handles it safely too.
-            const extractedHash = decodedText.split('/').pop();
-            setScannedHash(extractedHash);
-            
-            // Proceed to Blockchain validation
-            handleVerification(extractedHash);
-        };
+        if (verificationStatus === 'idle') {
+            // A tiny 50ms delay ensures React has fully painted the <div id="qr-reader"> 
+            // onto the screen BEFORE the library tries to attach the camera to it.
+            timeoutId = setTimeout(() => {
+                scanner = new Html5QrcodeScanner(
+                    "qr-reader",
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    false
+                );
 
-        const onScanFailure = (error) => {
-            // Ignore continuous scan failures (e.g., when no QR is in frame)
-        };
+                const onScanSuccess = (decodedText) => {
+                    // Destroy the scanner immediately upon successful read
+                    if (scanner) {
+                        scanner.clear().catch(error => console.error("Scanner clear error:", error));
+                    }
+                    
+                    const extractedHash = decodedText.split('/').pop();
+                    setScannedHash(extractedHash);
+                    handleVerification(extractedHash);
+                };
 
-        scanner.render(onScanSuccess, onScanFailure);
+                const onScanFailure = (error) => {
+                    // Background errors while searching for QR are normal, ignore them.
+                };
 
-        // Cleanup on unmount
+                scanner.render(onScanSuccess, onScanFailure);
+            }, 50);
+        }
+
+        // Cleanup: Fires when moving to another tab or when status changes from 'idle'
         return () => {
-            scanner.clear().catch(error => console.error("Failed to clear scanner.", error));
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+            if (scanner) {
+                scanner.clear().catch(error => {
+                    console.warn("Library cleanup interrupted. Engaging hardware kill-switch...", error);
+                    // Forcefully disconnect webcam to prevent phantom cameras
+                    const videoElements = document.querySelectorAll('video');
+                    videoElements.forEach(video => {
+                        if (video.srcObject) {
+                            video.srcObject.getTracks().forEach(track => track.stop());
+                        }
+                    });
+                });
+            }
         };
-    }, []);
+    }, [verificationStatus]);
 
-    // Core Verification Execution
+    // 3. Core Verification Logic
     const handleVerification = async (hashToVerify) => {
         setVerificationStatus('loading');
         setErrorMessage('');
         setDiplomaData(null);
 
-        // Basic validation for bytes32 length (0x + 64 characters = 66)
         if (!hashToVerify.startsWith('0x') || hashToVerify.length !== 66) {
             setVerificationStatus('invalid');
             setErrorMessage('Invalid cryptographic hash format detected from the QR Code.');
@@ -74,7 +93,6 @@ const Verify = () => {
                     setVerificationStatus('revoked');
                 } else {
                     setVerificationStatus('valid');
-                    // Convert Unix timestamp to readable date
                     const issueDate = new Date(blockchainResult.issuedAt * 1000).toLocaleString('en-US', {
                         dateStyle: 'long',
                         timeStyle: 'medium'
@@ -90,12 +108,18 @@ const Verify = () => {
         }
     };
 
-    // Manual input handler (Fallback mechanism)
     const handleManualSubmit = (e) => {
         e.preventDefault();
         if (scannedHash) {
             handleVerification(scannedHash);
         }
+    };
+
+    const handleScanAnother = () => {
+        setScannedHash('');
+        setErrorMessage('');
+        setDiplomaData(null);
+        setVerificationStatus('idle'); 
     };
 
     return (
@@ -107,7 +131,7 @@ const Verify = () => {
                 </p>
                 <hr style={{ marginBottom: '20px' }}/>
 
-                {/* UI Element: QR Scanner Area */}
+                {/* UI Element: Static ID QR Scanner Area */}
                 {verificationStatus === 'idle' && (
                     <div style={{ marginBottom: '20px' }}>
                         <div id="qr-reader" style={{ width: '100%', border: 'none', borderRadius: '8px', overflow: 'hidden' }}></div>
@@ -142,7 +166,7 @@ const Verify = () => {
                 {verificationStatus !== 'idle' && verificationStatus !== 'loading' && (
                     <div style={{ marginTop: '20px', textAlign: 'center' }}>
                         
-                        {/* 1. VALID RESULT */}
+                        {/* VALID RESULT */}
                         {verificationStatus === 'valid' && (
                             <div style={{ padding: '20px', backgroundColor: '#e6ffe6', border: '2px solid #00b300', borderRadius: '8px' }}>
                                 <h1 style={{ color: '#00b300', margin: '0 0 10px 0', fontSize: '40px' }}>✅ VERIFIED</h1>
@@ -157,7 +181,7 @@ const Verify = () => {
                             </div>
                         )}
 
-                        {/* 2. INVALID / NOT FOUND RESULT */}
+                        {/* INVALID RESULT */}
                         {verificationStatus === 'invalid' && (
                             <div style={{ padding: '20px', backgroundColor: '#ffe6e6', border: '2px solid #cc0000', borderRadius: '8px' }}>
                                 <h1 style={{ color: '#cc0000', margin: '0 0 10px 0', fontSize: '40px' }}>❌ NOT FOUND</h1>
@@ -169,7 +193,7 @@ const Verify = () => {
                             </div>
                         )}
 
-                        {/* 3. REVOKED RESULT */}
+                        {/* REVOKED RESULT */}
                         {verificationStatus === 'revoked' && (
                             <div style={{ padding: '20px', backgroundColor: '#fff5e6', border: '2px solid #ff9900', borderRadius: '8px' }}>
                                 <h1 style={{ color: '#ff9900', margin: '0 0 10px 0', fontSize: '40px' }}>⚠️ REVOKED</h1>
@@ -180,10 +204,9 @@ const Verify = () => {
                             </div>
                         )}
 
-                        {/* Retry Action */}
                         <button 
-                            onClick={() => window.location.reload()} 
-                            style={{ marginTop: '20px', padding: '10px 20px', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                            onClick={handleScanAnother} 
+                            style={{ marginTop: '20px', padding: '10px 20px', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', transition: '0.2s' }}
                         >
                             Scan Another Document
                         </button>
