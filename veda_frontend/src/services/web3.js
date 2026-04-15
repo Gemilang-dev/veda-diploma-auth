@@ -53,3 +53,32 @@ export const issueDiplomaOnChain = async (contractAddress, contractABI, diplomaH
         throw new Error(error.message || "Terjadi kesalahan saat memproses di Blockchain.");
     }
 };
+
+// ======================================================
+// VERIFICATION FUNCTION (READ-ONLY)
+// ======================================================
+export const verifyDiplomaOnChain = async (contractAddress, contractABI, diplomaHash) => {
+    try {
+        // Use a CORS-friendly Public RPC Endpoint
+        // Alternative 1: https://ethereum-sepolia-rpc.publicnode.com
+        // Alternative 2: https://1rpc.io/sepolia
+        // Alternative 3: https://rpc2.sepolia.org
+        const RPC_URL = "https://ethereum-sepolia-rpc.publicnode.com";
+        
+        const publicProvider = new ethers.JsonRpcProvider(RPC_URL);
+        const contract = new ethers.Contract(contractAddress, contractABI, publicProvider);
+
+        // Call the external view function
+        const result = await contract.verifyDiploma(diplomaHash);
+
+        // Result maps to: (bool isValid, bool isRevoked, uint256 issuedAt)
+        return {
+            isValid: result[0],
+            isRevoked: result[1],
+            issuedAt: Number(result[2]) 
+        };
+    } catch (error) {
+        console.error("Blockchain Verification Error:", error);
+        throw new Error("Failed to connect to the blockchain or invalid hash format.");
+    }
+};
