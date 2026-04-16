@@ -1,19 +1,17 @@
 from pydantic import BaseModel
 from datetime import datetime
-from fastapi import Body
 
-# Schema untuk Frontend saat mengirim data pendaftaran Super Admin
+# ==========================================
+# 🛡️ ADMIN SCHEMAS
+# ==========================================
 class AdminCreate(BaseModel):
     username: str
     password: str
 
-#Schema khusus untuk Login
 class AdminLogin(BaseModel):
     username: str
     password: str
 
-
-# Schema untuk respon sukses pendaftaran (agar password tidak ikut terkirim balik)
 class AdminResponse(BaseModel):
     id_admin: int
     username: str
@@ -21,13 +19,15 @@ class AdminResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# Schema untuk token JWT (Nanti digunakan untuk Login)
+# ==========================================
+# 🔑 AUTHENTICATION SCHEMAS
+# ==========================================
 class Token(BaseModel):
     access_token: str
     token_type: str
 
 # ==========================================
-# SCHEMAS UNTUK ISSUER (KAMPUS)
+# 🏫 ISSUER (UNIVERSITY) SCHEMAS
 # ==========================================
 class IssuerCreate(BaseModel):
     university_name: str
@@ -50,33 +50,48 @@ class IssuerResponse(BaseModel):
     class Config:
         from_attributes = True
 
-
 # ==========================================
-# SCHEMAS UNTUK DIPLOMA (IJAZAH)
+# 🎓 DIPLOMA (NATIONAL STANDARD + GPA)
 # ==========================================
-class DiplomaCreate(BaseModel):
-    diploma_id: str   # [BARU] Nomor Ijazah resmi dari pihak kampus
-    student_id: str
-    student_name: str 
-    univ_name: str
-    gpa: float
-
 class DiplomaPrepareRequest(BaseModel):
-    diploma_number: str      # Nomor Ijazah (PIN)
-    student_name: str        # Nama Mahasiswa
-    student_id: str          # NIM
-    gpa: str                 # IPK
-    degree: str              # Gelar
-    id_issuer: int           # ID Kampus
+    """
+    Comprehensive schema aligning with National Diploma Standards (Permendikbudristek)
+    along with crucial internal university metrics (e.g., GPA).
+    """
+    # 1. Institution Data
+    national_diploma_number: str
+    university_name: str
+    university_id_code: str
+    higher_education_program: str
+    study_program_name: str
+    study_program_id: str
+    
+    # 2. Graduate Data
+    student_name: str
+    place_of_birth: str
+    date_of_birth: str
+    student_id: str
+    academic_degree: str
+    gpa: str              # <-- Added Cumulative GPA here
+    graduation_date: str
+    
+    # 3. Issuance Data
+    issuance_location: str
+    issuance_date: str
+    signatory_name: str
+    signatory_title: str
+    
+    # 4. System Reference
+    id_issuer: int
 
-# Data yang dikembalikan oleh peladen setelah berhasil dicetak
 class DiplomaResponse(BaseModel):
     id: int
-    diploma_id: str
+    diploma_hash: str  # Updated from diploma_id
     student_id: str
     tx_hash: str
     issued_by: int
     issued_at: datetime
+    status: str
 
     class Config:
         from_attributes = True

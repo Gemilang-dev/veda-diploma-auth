@@ -45,3 +45,18 @@ export const confirmDiploma = async (recordId, txHash) => {
         throw new Error("Gagal menghubungi server untuk konfirmasi.");
     }
 };
+
+// ==========================================
+// NEW: FETCH OFF-CHAIN DATA FOR VERIFICATION
+// ==========================================
+export const getDiplomaDetails = async (diplomaHash) => {
+    try {
+        // This calls the GET /verify/{diploma_hash} route in your FastAPI backend
+        const response = await apiClient.get(`/verify/${diplomaHash}`);
+        return response.data;
+    } catch (error) {
+        throw new Error(
+            error.response?.data?.detail || "Failed to retrieve student data from the university database."
+        );
+    }
+};

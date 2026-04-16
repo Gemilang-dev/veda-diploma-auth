@@ -8,7 +8,11 @@ SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:@localhost:3306/veda"
 
 
 # 2. Membuat mesin (engine) penghubung ke MySQL
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, 
+    pool_pre_ping=True,    # Mengecek koneksi sebelum dipakai
+    pool_recycle=3600      # Me-reset koneksi setiap 1 jam secara otomatis
+)
 
 # 3. Membuat pengatur sesi (SessionMaker)
 # autocommit=False agar kita bisa mengontrol kapan data benar-benar disimpan

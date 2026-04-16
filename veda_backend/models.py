@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Enum, ForeignKey
+from sqlalchemy.orm import relationship
 from database import Base
-import datetime # Pastikan ini ada di bagian atas file jika belum ada
+from datetime import datetime
 from sqlalchemy import DateTime # Pastikan DateTime juga diimpor dari sqlalchemy
 
 # 1. Tabel Super Admin (Pihak yang mendaftarkan kampus)
@@ -38,31 +39,39 @@ class Issuer(Base):
 class DiplomaRecord(Base):
     __tablename__ = "tbl_diploma_record"
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, index=True)
     
-    # KOREKSI 1: String(66)
-    # Hash ijazah (SHA-256) ditambah awalan '0x' memiliki panjang persis 66 karakter.
-    # Jika menggunakan String(50), database akan menolak (Data too long for column).
-    diploma_id = Column(String(66), unique=True, index=True, nullable=False) 
+    # Cryptographic Identity
+    diploma_hash = Column(String(100), unique=True, index=True)  # Stores the SHA-256 Hash
+    tx_hash = Column(String(100), nullable=True)               # Stores the Blockchain Transaction Hash
     
-    student_id = Column(String(50), nullable=False)
+    # 1. Institution Data
+    national_diploma_number = Column(String(50), nullable=True)
+    university_name = Column(String(150), nullable=True)
+    university_id_code = Column(String(50), nullable=True)
+    higher_education_program = Column(String(100), nullable=True)
+    study_program_name = Column(String(100), nullable=True)
+    study_program_id = Column(String(50), nullable=True)
     
-    # KOREKSI 2: nullable=True
-    # Saat Backend baru membuat Hash (status Pending), transaksi ke Blockchain belum terjadi.
-    # Jadi tx_hash ini harus boleh kosong (NULL) pada awalnya, dan baru diisi 
-    # setelah MetaMask berhasil mengirim transaksi.
-    tx_hash = Column(String(100), nullable=True, unique=True) 
+    # 2. Graduate Data
+    student_name = Column(String(150), nullable=True)
+    place_of_birth = Column(String(100), nullable=True)
+    date_of_birth = Column(String(50), nullable=True)
+    student_id = Column(String(50), nullable=True) # NIM
+    academic_degree = Column(String(100), nullable=True)
+    gpa = Column(String(10), nullable=True)
+    graduation_date = Column(String(50), nullable=True)
     
-    # Relasi ke tabel kampus
-    issued_by = Column(
-        Integer, 
-        ForeignKey("tbl_issuer.id_issuer", ondelete="RESTRICT", onupdate="CASCADE"),
-        nullable=False
-    )
-    issued_at = Column(DateTime, default=datetime.datetime.utcnow)
+    # 3. Issuance Data
+    issuance_location = Column(String(100), nullable=True)
+    issuance_date = Column(String(50), nullable=True)
+    signatory_name = Column(String(150), nullable=True)
+    signatory_title = Column(String(100), nullable=True)
 
-    # TAMBAHAN: Status untuk melacak proses mempool Blockchain
-    status = Column(Enum('Pending', 'Success', 'Failed', name="diploma_status_enum"), default='Pending')
+    # System Status & Relations
+    status = Column(String(20), default="Pending") # Pending, Success, Revoked
+    issued_by = Column(Integer, ForeignKey("tbl_issuer.id_issuer"))
+    issued_at = Column(DateTime, default=datetime.utcnow)
 
-    # (Opsional tapi disarankan) Relasi balik ke Issuer agar query lebih mudah
-    # issuer = relationship("Issuer", back_populates="diploma_records")
+    # Relationship to Issuer table
+    issuer = relationship("Issuer")
