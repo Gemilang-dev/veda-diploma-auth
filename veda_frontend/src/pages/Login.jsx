@@ -12,20 +12,23 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-    useEffect(() => {
-        const token = localStorage.getItem('veda_token');
-        const role = localStorage.getItem('veda_role');
+  // ==========================================
+  // SATPAM LOGIN (Reverse Route Guard)
+  // ==========================================
+  useEffect(() => {
+    const token = localStorage.getItem('veda_token');
+    const role = localStorage.getItem('veda_role');
 
-        // Jika user sudah punya token (sudah login)
-        if (token) {
-        // Tendang kembali ke dashboard menggunakan 'replace: true' agar tombol back mati
-        if (role === 'admin') {
-            navigate('/admin/dashboard', { replace: true });
-        } else if (role === 'university') {
-            navigate('/university/issue', { replace: true });
-        }
-        }
-    }, [navigate]);
+    // Jika user sudah punya token (sudah login)
+    if (token) {
+      // Tendang kembali ke dashboard menggunakan 'replace: true' agar tombol back mati
+      if (role === 'admin') {
+        navigate('/admin/dashboard', { replace: true });
+      } else if (role === 'university') {
+        navigate('/university/issue', { replace: true });
+      }
+    }
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -34,7 +37,6 @@ export default function Login() {
 
     try {
       // 1. Tentukan URL API dan Role berdasarkan Toggle
-      // Asumsi: prefix di main.py untuk auth adalah /api/auth dan untuk issuer adalah /api/issuer
       const apiUrl = isSuperAdmin 
         ? 'http://127.0.0.1:8000/api/auth/login' // Endpoint Super Admin
         : 'http://127.0.0.1:8000/api/issuer/login'; // Endpoint Kampus
@@ -42,7 +44,7 @@ export default function Login() {
       const userRole = isSuperAdmin ? 'admin' : 'university';
       const redirectPath = isSuperAdmin ? '/admin/dashboard' : '/university/issue';
 
-      // 2. Siapkan Data (FastAPI wajib menerima x-www-form-urlencoded)
+      // 2. Siapkan Data
       const formData = new URLSearchParams();
       formData.append('username', emailOrUsername); 
       formData.append('password', password);
@@ -60,14 +62,23 @@ export default function Login() {
         throw new Error(data.detail || "Terjadi kesalahan saat login");
       }
 
-      // 4. Sukses! Simpan Token ke Local Storage Browser
+      // 4. Simpan Token dan Role ke Local Storage Browser
       localStorage.setItem('veda_token', data.access_token);
       localStorage.setItem('veda_role', userRole);
 
-      localStorage.setItem('veda_issuer_id', data.user_id); // Sesuaikan dengan key dari backend
-      localStorage.setItem('veda_university_name', data.university_name);
+      // ==========================================
+      // 5. BONGKAR TOKEN JWT UNTUK MENGAMBIL ID
+      // ==========================================
+      // JWT dipisah dengan titik (.). Bagian indeks [1] adalah Payload.
+      const payloadBase64 = data.access_token.split('.')[1];
+      const decodedPayload = JSON.parse(atob(payloadBase64)); 
 
-      // 5. Arahkan ke Dashboard masing-masing
+      // Simpan ID Issuer jika yang login adalah kampus
+      if (decodedPayload.id_issuer) {
+        localStorage.setItem('veda_issuer_id', decodedPayload.id_issuer);
+      }
+
+      // 6. Arahkan ke Dashboard
       navigate(redirectPath);
 
     } catch (err) {

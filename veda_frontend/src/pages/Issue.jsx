@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Grid, OutlinedInput, FormLabel, Typography, Button, 
   Box, Paper, Divider, CircularProgress 
@@ -64,8 +64,24 @@ export default function IssueDiploma() {
     issuance_date: null, 
     signatory_name: 'Prof. Dr. Hasan Mahmud',
     signatory_title: 'Rector',
-    id_issuer: 3 
+    id_issuer: '' 
   });
+
+  // ==========================================
+  // [BARU] SINKRONISASI ID ISSUER DARI LOGIN
+  // ==========================================
+  useEffect(() => {
+    // Saat halaman dibuka, cari ID di Local Storage
+    const savedIssuerId = localStorage.getItem('veda_issuer_id');
+    
+    if (savedIssuerId) {
+      // Jika ketemu, update state id_issuer dengan angka tersebut
+      setFormData(prevData => ({
+        ...prevData,
+        id_issuer: parseInt(savedIssuerId) // Ubah string ke angka
+      }));
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
