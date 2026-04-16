@@ -1,20 +1,79 @@
-import React, { useState } from 'react';
-import { Box, Paper, Typography, TextField, Button } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Paper, Typography, TextField, Button, CircularProgress } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
   const navigate = useNavigate();
-  // State untuk menentukan form mana yang aktif. Default: false (University Admin)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  
+  // State untuk form
+  const [emailOrUsername, setEmailOrUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleLogin = (e) => {
+    useEffect(() => {
+        const token = localStorage.getItem('veda_token');
+        const role = localStorage.getItem('veda_role');
+
+        // Jika user sudah punya token (sudah login)
+        if (token) {
+        // Tendang kembali ke dashboard menggunakan 'replace: true' agar tombol back mati
+        if (role === 'admin') {
+            navigate('/admin/dashboard', { replace: true });
+        } else if (role === 'university') {
+            navigate('/university/issue', { replace: true });
+        }
+        }
+    }, [navigate]);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Di sinilah nanti Anda memasang logika API Login sesungguhnya
-    // Untuk sekarang, kita arahkan langsung ke dashboard sesuai role
-    if (isSuperAdmin) {
-      navigate('/admin/dashboard');
-    } else {
-      navigate('/university/issue');
+    setLoading(true);
+    setError('');
+
+    try {
+      // 1. Tentukan URL API dan Role berdasarkan Toggle
+      // Asumsi: prefix di main.py untuk auth adalah /api/auth dan untuk issuer adalah /api/issuer
+      const apiUrl = isSuperAdmin 
+        ? 'http://127.0.0.1:8000/api/auth/login' // Endpoint Super Admin
+        : 'http://127.0.0.1:8000/api/issuer/login'; // Endpoint Kampus
+
+      const userRole = isSuperAdmin ? 'admin' : 'university';
+      const redirectPath = isSuperAdmin ? '/admin/dashboard' : '/university/issue';
+
+      // 2. Siapkan Data (FastAPI wajib menerima x-www-form-urlencoded)
+      const formData = new URLSearchParams();
+      formData.append('username', emailOrUsername); 
+      formData.append('password', password);
+
+      // 3. Tembak API Backend
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Terjadi kesalahan saat login");
+      }
+
+      // 4. Sukses! Simpan Token ke Local Storage Browser
+      localStorage.setItem('veda_token', data.access_token);
+      localStorage.setItem('veda_role', userRole);
+
+      localStorage.setItem('veda_issuer_id', data.user_id); // Sesuaikan dengan key dari backend
+      localStorage.setItem('veda_university_name', data.university_name);
+
+      // 5. Arahkan ke Dashboard masing-masing
+      navigate(redirectPath);
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -30,22 +89,43 @@ export default function Login() {
         </Typography>
 
         <form onSubmit={handleLogin}>
-          <TextField fullWidth label="Email Address" margin="normal" required />
-          <TextField fullWidth label="Password" type="password" margin="normal" required />
+          <TextField 
+            fullWidth 
+            label={isSuperAdmin ? "Username Admin" : "Email Kampus"} 
+            margin="normal" required 
+            value={emailOrUsername}
+            onChange={(e) => setEmailOrUsername(e.target.value)}
+          />
+          <TextField 
+            fullWidth label="Password" type="password" 
+            margin="normal" required 
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
           
+          {error && (
+            <Typography variant="body2" sx={{ color: '#e74c3c', mt: 1, textAlign: 'left', fontWeight: 600 }}>
+              ❌ {error}
+            </Typography>
+          )}
+
           <Button 
-            type="submit" fullWidth variant="contained" 
+            type="submit" fullWidth variant="contained" disabled={loading}
             sx={{ mt: 3, mb: 2, py: 1.5, backgroundColor: isSuperAdmin ? '#e74c3c' : '#1abc9c', fontWeight: 800 }}
           >
-            LOGIN
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'LOGIN'}
           </Button>
         </form>
 
-        {/* Text Toggle antar form */}
         <Typography 
           variant="body2" 
           sx={{ color: '#3498db', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
-          onClick={() => setIsSuperAdmin(!isSuperAdmin)}
+          onClick={() => {
+            setIsSuperAdmin(!isSuperAdmin);
+            setError(''); 
+            setEmailOrUsername(''); // Kosongkan input saat ganti mode
+            setPassword('');
+          }}
         >
           {isSuperAdmin ? 'Login as University Admin?' : 'Login as Administration Admin?'}
         </Typography>

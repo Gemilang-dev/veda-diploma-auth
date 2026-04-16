@@ -1,6 +1,6 @@
 import React from 'react';
-import { Box, Drawer, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Box, Drawer, List, ListItem, ListItemText, Typography, Divider } from '@mui/material';
+import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
 
 const drawerWidth = 260;
 
@@ -8,11 +8,20 @@ export default function DashboardLayout({ role }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // ==========================================
+  // SATPAM FRONTEND (Route Guard)
+  // ==========================================
+  const hasToken = !!localStorage.getItem('veda_token');
+
+  if (role !== 'guest' && !hasToken) {
+    return <Navigate to="/login" replace />;
+  }
+
   // Menentukan data Profile berdasarkan Role
   const profile = {
     guest: { name: 'Guest', desc: 'Public Verifier' },
-    university: { name: 'Super Admin', desc: 'Burch University' }, // Sesuai desain awal Anda
-    admin: { name: 'System Admin', desc: 'Veda Core' }
+    university: { name: 'University Admin', desc: 'Issuer Portal' }, 
+    admin: { name: 'Super Admin', desc: 'Veda Core' }
   };
 
   // Menentukan Menu Sidebar berdasarkan Role
@@ -32,18 +41,41 @@ export default function DashboardLayout({ role }) {
     return [];
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('veda_token');
+    localStorage.removeItem('veda_role');
+    localStorage.removeItem('veda_issuer_id');
+    localStorage.removeItem('veda_university_name');
+    
+    // Gunakan replace agar history browser dihapus
+    navigate('/', { replace: true });
+  };
+
   return (
     <Box sx={{ display: 'flex', width: '100vw', minHeight: '100vh', backgroundColor: '#f4f6f9' }}>
-      {/* SIDEBAR */}
       <Drawer
         variant="permanent"
-        sx={{ width: drawerWidth, flexShrink: 0, '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box', backgroundColor: '#2C3E50', color: '#fff' } }}
+        sx={{ 
+          width: drawerWidth, 
+          flexShrink: 0, 
+          '& .MuiDrawer-paper': { 
+            width: drawerWidth, 
+            boxSizing: 'border-box', 
+            backgroundColor: '#2C3E50', 
+            color: '#fff',
+            display: 'flex',          
+            flexDirection: 'column'   
+          } 
+        }}
       >
         <Box sx={{ p: 3, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>{profile[role].name}</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+            {role === 'university' ? (localStorage.getItem('veda_university_name') || profile[role].name) : profile[role].name}
+          </Typography>
           <Typography variant="body2" sx={{ color: '#1abc9c' }}>{profile[role].desc}</Typography>
         </Box>
-        <List sx={{ pt: 2 }}>
+
+        <List sx={{ pt: 2, flexGrow: 1 }}>
           {getMenus().map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -61,11 +93,42 @@ export default function DashboardLayout({ role }) {
             );
           })}
         </List>
+
+        {role !== 'guest' ? (
+          <Box sx={{ p: 2 }}>
+            <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', mb: 2 }} />
+            <ListItem 
+              button 
+              onClick={handleLogout}
+              sx={{ 
+                backgroundColor: 'rgba(231, 76, 60, 0.1)', 
+                color: '#e74c3c',
+                borderRadius: '8px',
+                '&:hover': { backgroundColor: '#e74c3c', color: '#fff' }
+              }}
+            >
+              <ListItemText primary="Logout System" primaryTypographyProps={{ fontWeight: 800, textAlign: 'center' }} />
+            </ListItem>
+          </Box>
+        ) : (
+          <Box sx={{ p: 2 }}>
+            <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', mb: 2 }} />
+            <ListItem 
+              button 
+              onClick={() => navigate('/')}
+              sx={{ 
+                backgroundColor: 'rgba(255, 255, 255, 0.05)', 
+                borderRadius: '8px',
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' }
+              }}
+            >
+              <ListItemText primary="Back to Home" primaryTypographyProps={{ fontWeight: 600, textAlign: 'center' }} />
+            </ListItem>
+          </Box>
+        )}
       </Drawer>
 
-      {/* KONTEN UTAMA (Tempat halaman akan muncul) */}
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-         {/* <Outlet /> adalah portal tempat anak-anak router (Issue.jsx, dll) ditampilkan */}
         <Outlet /> 
       </Box>
     </Box>
