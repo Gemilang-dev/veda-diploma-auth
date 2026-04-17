@@ -7,15 +7,15 @@ export default function Home() {
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f4f6f9' }}>
-      {/* Navbar Atas */}
+      {/* Navbar */}
       <AppBar position="static" elevation={0} sx={{ backgroundColor: '#2C3E50' }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: '#fff' }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: '#fff', letterSpacing: 1 }}>
             VEDA <span style={{ color: '#1abc9c' }}>SYSTEM</span>
           </Typography>
           <Button 
             variant="outlined" 
-            sx={{ color: '#fff', borderColor: '#fff', '&:hover': { borderColor: '#1abc9c', color: '#1abc9c' } }}
+            sx={{ color: '#fff', borderColor: '#fff', '&:hover': { borderColor: '#1abc9c', color: '#1abc9c' }, fontWeight: 700 }}
             onClick={() => navigate('/login')}
           >
             LOGIN
@@ -23,13 +23,13 @@ export default function Home() {
         </Toolbar>
       </AppBar>
 
-      {/* Konten Utama */}
-      <Container maxWidth="md" sx={{ mt: 10, textAlign: 'center' }}>
+      {/* Hero Content */}
+      <Container maxWidth="md" sx={{ mt: 12, textAlign: 'center' }}>
         <Typography variant="h3" sx={{ fontWeight: 800, color: '#2C3E50', mb: 3 }}>
-          Verifikasi Ijazah Berbasis Blockchain
+          Blockchain-Based Diploma Verification
         </Typography>
-        <Typography variant="h6" sx={{ color: '#7f8c8d', mb: 6, fontWeight: 400 }}>
-          Sistem terdesentralisasi untuk menjamin keaslian dan keamanan dokumen akademik menggunakan teknologi Web3 secara transparan dan anti-pemalsuan.
+        <Typography variant="h6" sx={{ color: '#7f8c8d', mb: 6, fontWeight: 400, lineHeight: 1.6 }}>
+          A decentralized ecosystem ensuring the authenticity and security of academic credentials through transparent and tamper-proof Web3 technology.
         </Typography>
         
         <Button 
@@ -38,12 +38,13 @@ export default function Home() {
           onClick={() => navigate('/guest/verify')}
           sx={{ 
             backgroundColor: '#1abc9c', 
-            py: 2, px: 5, 
-            fontSize: '1.1rem', fontWeight: 700,
-            '&:hover': { backgroundColor: '#16a085' }
+            py: 2, px: 6, 
+            fontSize: '1.1rem', fontWeight: 800, letterSpacing: 1,
+            '&:hover': { backgroundColor: '#16a085' },
+            borderRadius: 2
           }}
         >
-          CHECK KEASLIAN IJAZAH
+          VERIFY DIPLOMA
         </Button>
       </Container>
     </Box>

@@ -130,10 +130,11 @@ const Verify = () => {
                         <div style={{ marginBottom: '20px' }}>
                             <div id={qrRegionId} style={{ width: '100%', border: 'none', borderRadius: '8px', overflow: 'hidden' }}></div>
                         </div>
-                        <form onSubmit={handleManualSubmit} style={{ display: 'flex', gap: '10px' }}>
+                        {/* <form onSubmit={handleManualSubmit} style={{ display: 'flex', gap: '10px' }}>
+                        
                             <input type="text" placeholder="Or manually enter the Hash ID..." value={scannedHash} onChange={(e) => setScannedHash(e.target.value)} style={{ flex: 1, padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }} />
                             <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Verify</button>
-                        </form>
+                        </form> */}
                     </>
                 )}
 
