@@ -172,32 +172,89 @@ async def confirm_diploma_transaction(
     
 # 3. DATA RETRIEVAL FOR HR/VERIFIERS
 # ==========================================
+# @router.get("/verify/{diploma_hash}")
+# async def get_diploma_details(diploma_hash: str, db: Session = Depends(get_db)):
+    
+#     # Hapus filter status == 'Success' agar data yang 'Pending' juga bisa dibaca
+#     record = db.query(models.DiplomaRecord).filter(
+#         models.DiplomaRecord.diploma_hash == diploma_hash
+#     ).first()
+
+#     if not record:
+#         raise HTTPException(
+#             status_code=404, 
+#             detail="Diploma data not found in off-chain database."
+#         )
+
+#     return {
+#             "status": "success",
+#             "data": {
+#                 "national_diploma_number": record.national_diploma_number,
+#                 "student_name": record.student_name,
+#                 "student_id": record.student_id,
+#                 "university_name": record.university_name,
+#                 "study_program_name": record.study_program_name,
+#                 "academic_degree": record.academic_degree,
+#                 "gpa": record.gpa,
+#                 "graduation_date": record.graduation_date,
+#                 "signatory_name": record.signatory_name,
+#                 "tx_hash": record.tx_hash
+#             }
+#         }
+
+
 @router.get("/verify/{diploma_hash}")
 async def get_diploma_details(diploma_hash: str, db: Session = Depends(get_db)):
-    
-    # Hapus filter status == 'Success' agar data yang 'Pending' juga bisa dibaca
     record = db.query(models.DiplomaRecord).filter(
         models.DiplomaRecord.diploma_hash == diploma_hash
     ).first()
 
     if not record:
+        raise HTTPException(status_code=404, detail="Diploma data not found.")
+
+    # ============================================================
+    # 1. LOGIKA RE-HASH (Gunakan .strip() dan pastikan urutan)
+    # ============================================================
+    # Pastikan urutan ini SAMA PERSIS dengan fungsi saat 'Issue'
+    # Kita paksa semua menjadi string dan hilangkan spasi liar
+    raw_data = (
+        f"{record.national_diploma_number}|{record.university_name}|{record.university_id_code}|"
+        f"{record.higher_education_program}|{record.study_program_name}|{record.study_program_id}|"
+        f"{record.student_name}|{record.place_of_birth}|{record.date_of_birth}|{record.student_id}|"
+        f"{record.academic_degree}|{record.gpa}|{record.graduation_date}|"
+        f"{record.issuance_location}|{record.issuance_date}|{record.signatory_name}|{record.signatory_title}"
+    )
+    calculated_hash = hashlib.sha256(raw_data.encode()).hexdigest()
+    full_calculated_hash = f"0x{calculated_hash}"
+
+    # CEK TERMINAL ANDA: Bandingkan kedua nilai ini saat error muncul
+    print(f"\n--- DEBUG INTEGRITY CHECK ---")
+    print(f"Data String: {raw_data}")
+    print(f"Hash dari DB: {record.diploma_hash}")
+    print(f"Hasil Re-hash: {full_calculated_hash}")
+    print(f"-----------------------------\n")
+
+    # ============================================================
+    # 2. KOMPARASI (The Verification)
+    # ============================================================
+    if full_calculated_hash != record.diploma_hash:
         raise HTTPException(
-            status_code=404, 
-            detail="Diploma data not found in off-chain database."
+            status_code=400, 
+            detail="VERIFICATION FAILED: Data mismatch between SQL and Blockchain Anchor."
         )
 
     return {
-            "status": "success",
-            "data": {
-                "national_diploma_number": record.national_diploma_number,
-                "student_name": record.student_name,
-                "student_id": record.student_id,
-                "university_name": record.university_name,
-                "study_program_name": record.study_program_name,
-                "academic_degree": record.academic_degree,
-                "gpa": record.gpa,
-                "graduation_date": record.graduation_date,
-                "signatory_name": record.signatory_name,
-                "tx_hash": record.tx_hash
-            }
+        "status": "success",
+        "data": {
+            "national_diploma_number": record.national_diploma_number,
+            "student_name": record.student_name,
+            "student_id": record.student_id,
+            "university_name": record.university_name,
+            "study_program_name": record.study_program_name,
+            "academic_degree": record.academic_degree,
+            "gpa": record.gpa,
+            "graduation_date": record.graduation_date,
+            "signatory_name": record.signatory_name,
+            "tx_hash": record.tx_hash
         }
+    }

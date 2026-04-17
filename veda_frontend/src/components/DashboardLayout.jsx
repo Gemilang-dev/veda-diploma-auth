@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Drawer, List, ListItem, ListItemText, Typography, Divider } from '@mui/material';
+import { Box, Drawer, List, ListItem, ListItemButton, ListItemText, Typography, Divider } from '@mui/material';
 import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
 
 const drawerWidth = 260;
@@ -8,23 +8,18 @@ export default function DashboardLayout({ role }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ==========================================
-  // SATPAM FRONTEND (Route Guard)
-  // ==========================================
   const hasToken = !!localStorage.getItem('veda_token');
 
   if (role !== 'guest' && !hasToken) {
     return <Navigate to="/login" replace />;
   }
 
-  // Menentukan data Profile berdasarkan Role
   const profile = {
     guest: { name: 'Guest', desc: 'Public Verifier' },
     university: { name: 'University Admin', desc: 'Issuer Portal' }, 
     admin: { name: 'Super Admin', desc: 'Veda Core' }
   };
 
-  // Menentukan Menu Sidebar berdasarkan Role
   const getMenus = () => {
     if (role === 'guest') return [{ title: 'Verify Document', path: '/guest/verify' }];
     if (role === 'university') return [
@@ -46,8 +41,6 @@ export default function DashboardLayout({ role }) {
     localStorage.removeItem('veda_role');
     localStorage.removeItem('veda_issuer_id');
     localStorage.removeItem('veda_university_name');
-    
-    // Gunakan replace agar history browser dihapus
     navigate('/', { replace: true });
   };
 
@@ -63,7 +56,7 @@ export default function DashboardLayout({ role }) {
             boxSizing: 'border-box', 
             backgroundColor: '#2C3E50', 
             color: '#fff',
-            display: 'flex',          
+            display: 'flex',           
             flexDirection: 'column'   
           } 
         }}
@@ -79,53 +72,54 @@ export default function DashboardLayout({ role }) {
           {getMenus().map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <ListItem 
-                button key={item.title} onClick={() => navigate(item.path)}
-                sx={{ 
-                  mb: 1, 
-                  backgroundColor: isActive ? '#1abc9c' : 'transparent',
-                  '&:hover': { backgroundColor: isActive ? '#1abc9c' : 'rgba(255,255,255,0.05)' },
-                  borderRight: isActive ? '4px solid #fff' : 'none'
-                }}
-              >
-                <ListItemText primary={item.title} primaryTypographyProps={{ fontWeight: isActive ? 800 : 500, fontSize: '0.9rem' }} />
+              <ListItem key={item.title} disablePadding sx={{ mb: 1 }}>
+                <ListItemButton 
+                  onClick={() => navigate(item.path)}
+                  sx={{ 
+                    backgroundColor: isActive ? '#1abc9c' : 'transparent',
+                    '&:hover': { backgroundColor: isActive ? '#1abc9c' : 'rgba(255,255,255,0.05)' },
+                    borderRight: isActive ? '4px solid #fff' : 'none'
+                  }}
+                >
+                  <ListItemText 
+                    primary={item.title} 
+                    primaryTypographyProps={{ fontWeight: isActive ? 800 : 500, fontSize: '0.9rem' }} 
+                  />
+                </ListItemButton>
               </ListItem>
             );
           })}
         </List>
 
-        {role !== 'guest' ? (
-          <Box sx={{ p: 2 }}>
-            <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', mb: 2 }} />
-            <ListItem 
-              button 
-              onClick={handleLogout}
-              sx={{ 
-                backgroundColor: 'rgba(231, 76, 60, 0.1)', 
-                color: '#e74c3c',
-                borderRadius: '8px',
-                '&:hover': { backgroundColor: '#e74c3c', color: '#fff' }
-              }}
-            >
-              <ListItemText primary="Logout System" primaryTypographyProps={{ fontWeight: 800, textAlign: 'center' }} />
-            </ListItem>
-          </Box>
-        ) : (
-          <Box sx={{ p: 2 }}>
-            <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', mb: 2 }} />
-            <ListItem 
-              button 
-              onClick={() => navigate('/')}
-              sx={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.05)', 
-                borderRadius: '8px',
-                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' }
-              }}
-            >
-              <ListItemText primary="Back to Home" primaryTypographyProps={{ fontWeight: 600, textAlign: 'center' }} />
-            </ListItem>
-          </Box>
-        )}
+        <Box sx={{ p: 2 }}>
+          <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', mb: 2 }} />
+          <ListItem disablePadding>
+            {role !== 'guest' ? (
+              <ListItemButton 
+                onClick={handleLogout}
+                sx={{ 
+                  backgroundColor: 'rgba(231, 76, 60, 0.1)', 
+                  color: '#e74c3c',
+                  borderRadius: '8px',
+                  '&:hover': { backgroundColor: '#e74c3c', color: '#fff' }
+                }}
+              >
+                <ListItemText primary="Logout System" primaryTypographyProps={{ fontWeight: 800, textAlign: 'center' }} />
+              </ListItemButton>
+            ) : (
+              <ListItemButton 
+                onClick={() => navigate('/')}
+                sx={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)', 
+                  borderRadius: '8px',
+                  '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' }
+                }}
+              >
+                <ListItemText primary="Back to Home" primaryTypographyProps={{ fontWeight: 600, textAlign: 'center' }} />
+              </ListItemButton>
+            )}
+          </ListItem>
+        </Box>
       </Drawer>
 
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
