@@ -2,11 +2,36 @@ import os
 import hashlib 
 import models
 import schemas
+import json
+from web3 import Web3
 from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from database import get_db
+from dotenv import load_dotenv
 
 router = APIRouter()
+
+load_dotenv()
+ALCHEMY_URL = os.getenv("ALCHEMY_SEPOLIA_URL")
+CONTRACT_ADDRESS = os.getenv("DIPLOMA_REGISTRY_ADDRESS")
+
+try:
+    with open("abi.json", "r") as file:
+        CONTRACT_ABI = json.load(file)
+except FileNotFoundError:
+    print("🚨 ERROR FATAL: File 'abi.json' tidak ditemukan di root folder!")
+    CONTRACT_ABI = []  # Mencegah aplikasi crash total
+except json.JSONDecodeError:
+    print("🚨 ERROR FATAL: Isi file 'abi.json' bukan format JSON yang valid!")
+    CONTRACT_ABI = []
+
+# 3. Setup Koneksi Web3
+try:
+    w3 = Web3(Web3.HTTPProvider(ALCHEMY_URL))
+    contract = w3.eth.contract(address=CONTRACT_ADDRESS, abi=CONTRACT_ABI)
+    print("✅ Web3 Connection Setup Successful in diploma.py")
+except Exception as e:
+    print(f"❌ Failed to setup Web3: {e}")
 
 # ==========================================
 # 1. PREPARATION PHASE (OFF-CHAIN HASHING)
@@ -172,51 +197,17 @@ async def confirm_diploma_transaction(
     
 # 3. DATA RETRIEVAL FOR HR/VERIFIERS
 # ==========================================
-# @router.get("/verify/{diploma_hash}")
-# async def get_diploma_details(diploma_hash: str, db: Session = Depends(get_db)):
-    
-#     # Hapus filter status == 'Success' agar data yang 'Pending' juga bisa dibaca
-#     record = db.query(models.DiplomaRecord).filter(
-#         models.DiplomaRecord.diploma_hash == diploma_hash
-#     ).first()
-
-#     if not record:
-#         raise HTTPException(
-#             status_code=404, 
-#             detail="Diploma data not found in off-chain database."
-#         )
-
-#     return {
-#             "status": "success",
-#             "data": {
-#                 "national_diploma_number": record.national_diploma_number,
-#                 "student_name": record.student_name,
-#                 "student_id": record.student_id,
-#                 "university_name": record.university_name,
-#                 "study_program_name": record.study_program_name,
-#                 "academic_degree": record.academic_degree,
-#                 "gpa": record.gpa,
-#                 "graduation_date": record.graduation_date,
-#                 "signatory_name": record.signatory_name,
-#                 "tx_hash": record.tx_hash
-#             }
-#         }
-
-
 @router.get("/verify/{diploma_hash}")
-async def get_diploma_details(diploma_hash: str, db: Session = Depends(get_db)):
+async def verify_diploma(diploma_hash: str, db: Session = Depends(get_db)):
+    # 1. AMBIL DATA DARI MYSQL
     record = db.query(models.DiplomaRecord).filter(
         models.DiplomaRecord.diploma_hash == diploma_hash
     ).first()
 
     if not record:
-        raise HTTPException(status_code=404, detail="Diploma data not found.")
+        raise HTTPException(status_code=404, detail="Diploma data not found in our records.")
 
-    # ============================================================
-    # 1. LOGIKA RE-HASH (Gunakan .strip() dan pastikan urutan)
-    # ============================================================
-    # Pastikan urutan ini SAMA PERSIS dengan fungsi saat 'Issue'
-    # Kita paksa semua menjadi string dan hilangkan spasi liar
+    # 2. INTERNAL INTEGRITY CHECK (Re-hash SQL data)
     raw_data = (
         f"{record.national_diploma_number}|{record.university_name}|{record.university_id_code}|"
         f"{record.higher_education_program}|{record.study_program_name}|{record.study_program_id}|"
@@ -224,37 +215,69 @@ async def get_diploma_details(diploma_hash: str, db: Session = Depends(get_db)):
         f"{record.academic_degree}|{record.gpa}|{record.graduation_date}|"
         f"{record.issuance_location}|{record.issuance_date}|{record.signatory_name}|{record.signatory_title}"
     )
-    calculated_hash = hashlib.sha256(raw_data.encode()).hexdigest()
-    full_calculated_hash = f"0x{calculated_hash}"
+    calculated_hash = f"0x{hashlib.sha256(raw_data.encode()).hexdigest()}"
 
-    # CEK TERMINAL ANDA: Bandingkan kedua nilai ini saat error muncul
-    print(f"\n--- DEBUG INTEGRITY CHECK ---")
-    print(f"Data String: {raw_data}")
-    print(f"Hash dari DB: {record.diploma_hash}")
-    print(f"Hasil Re-hash: {full_calculated_hash}")
-    print(f"-----------------------------\n")
-
-    # ============================================================
-    # 2. KOMPARASI (The Verification)
-    # ============================================================
-    if full_calculated_hash != record.diploma_hash:
+    if calculated_hash != record.diploma_hash:
+        # Jika ini gagal, berarti ada ADMIN NAKAL yang mengubah data langsung di database MySQL
         raise HTTPException(
             status_code=400, 
-            detail="VERIFICATION FAILED: Data mismatch between SQL and Blockchain Anchor."
+            detail="INTERNAL TAMPERING DETECTED: SQL data does not match the stored hash."
         )
 
+    # 3. BLOCKCHAIN CROSS-CHECK (The Alchemy Part)
+    # Kita memanggil fungsi 'verifyDiploma' (atau sejenisnya) di Smart Contract
+    try:
+        # Panggil fungsi verifyDiploma. 
+        # Karena Solidity me-return 3 nilai, Python akan menerimanya sebagai Tuple (List)
+        blockchain_result = contract.functions.verifyDiploma(record.diploma_hash).call()
+        
+        is_valid_on_chain = blockchain_result[0]   # Index 0: bool isValid
+        is_revoked_on_chain = blockchain_result[1] # Index 1: bool isRevoked
+        # issued_at = blockchain_result[2]         # Index 2: uint256 issuedAt (Opsional jika ingin dipakai)
+
+        # Cek Skenario 1: Apakah ijazah ini pernah dicabut (Revoked)?
+        if is_revoked_on_chain:
+            raise HTTPException(
+                status_code=400,
+                detail="REVOKED: This diploma was registered but has been officially REVOKED by the University."
+            )
+
+        # Cek Skenario 2: Apakah ijazah ini valid (terdaftar dan tidak dicabut)?
+        if not is_valid_on_chain:
+            raise HTTPException(
+                status_code=400,
+                detail="FORGERY ALERT: Data found in SQL but NOT verified on the Ethereum Blockchain."
+            )
+
+    except HTTPException:
+        # Biarkan pesan error spesifik kita (Revoked/Forgery) lolos ke Frontend
+        raise
+    except Exception as e:
+        # Menangkap error jaringan Alchemy / ABI mismatch
+        print(f"Blockchain Connection Error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Blockchain network is currently unreachable. Please try again later."
+        )
+
+
     return {
-        "status": "success",
+        "status": "Verified",
+        "message": "This diploma is 100% Authentic (Verified by Blockchain & Local Database)",
         "data": {
-            "national_diploma_number": record.national_diploma_number,
+            # Pastikan nama key (kiri) sama dengan yang dipanggil di React kamu
             "student_name": record.student_name,
-            "student_id": record.student_id,
+            "student_id": record.student_id,  # Ini NIM
+            "national_diploma_number": record.national_diploma_number,
             "university_name": record.university_name,
             "study_program_name": record.study_program_name,
             "academic_degree": record.academic_degree,
             "gpa": record.gpa,
             "graduation_date": record.graduation_date,
+            "issuance_location": record.issuance_location,
+            "issuance_date": record.issuance_date,
             "signatory_name": record.signatory_name,
-            "tx_hash": record.tx_hash
+            "signatory_title": record.signatory_title,
+            "tx_hash": record.tx_hash 
         }
     }

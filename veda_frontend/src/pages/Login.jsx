@@ -19,9 +19,8 @@ export default function Login() {
     const token = localStorage.getItem('veda_token');
     const role = localStorage.getItem('veda_role');
 
-    // Jika user sudah punya token (sudah login)
+    // Jika user sudah punya token (sudah login), jangan biarkan di halaman login
     if (token) {
-      // Tendang kembali ke dashboard menggunakan 'replace: true' agar tombol back mati
       if (role === 'admin') {
         navigate('/admin/dashboard', { replace: true });
       } else if (role === 'university') {
@@ -44,7 +43,7 @@ export default function Login() {
       const userRole = isSuperAdmin ? 'admin' : 'university';
       const redirectPath = isSuperAdmin ? '/admin/dashboard' : '/university/issue';
 
-      // 2. Siapkan Data
+      // 2. Siapkan Data (FastAPI OAuth2 butuh format x-www-form-urlencoded)
       const formData = new URLSearchParams();
       formData.append('username', emailOrUsername); 
       formData.append('password', password);
@@ -69,13 +68,18 @@ export default function Login() {
       // ==========================================
       // 5. BONGKAR TOKEN JWT UNTUK MENGAMBIL ID
       // ==========================================
-      // JWT dipisah dengan titik (.). Bagian indeks [1] adalah Payload.
+      // Memperbaiki base64 decoding agar lebih aman terhadap karakter khusus
       const payloadBase64 = data.access_token.split('.')[1];
-      const decodedPayload = JSON.parse(atob(payloadBase64)); 
+      const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+      const decodedPayload = JSON.parse(atob(base64)); 
 
-      // Simpan ID Issuer jika yang login adalah kampus
-      if (decodedPayload.id_issuer) {
-        localStorage.setItem('veda_issuer_id', decodedPayload.id_issuer);
+      if (isSuperAdmin) {
+        // Simpan data spesifik Admin
+        if (decodedPayload.id_admin) localStorage.setItem('veda_admin_id', decodedPayload.id_admin);
+        if (decodedPayload.sub) localStorage.setItem('veda_admin_username', decodedPayload.sub);
+      } else {
+        // Simpan data spesifik Kampus
+        if (decodedPayload.id_issuer) localStorage.setItem('veda_issuer_id', decodedPayload.id_issuer);
       }
 
       // 6. Arahkan ke Dashboard
@@ -122,7 +126,7 @@ export default function Login() {
 
           <Button 
             type="submit" fullWidth variant="contained" disabled={loading}
-            sx={{ mt: 3, mb: 2, py: 1.5, backgroundColor: isSuperAdmin ? '#e74c3c' : '#1abc9c', fontWeight: 800 }}
+            sx={{ mt: 3, mb: 2, py: 1.5, backgroundColor: isSuperAdmin ? '#e74c3c' : '#1abc9c', '&:hover': { backgroundColor: isSuperAdmin ? '#c0392b' : '#16a085' }, fontWeight: 800 }}
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : 'LOGIN'}
           </Button>

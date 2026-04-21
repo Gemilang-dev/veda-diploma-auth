@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { verifyDiplomaOnChain } from '../services/web3';
-import { getDiplomaDetails } from '../services/api'; // <--- Import the new API function
+import { getDiplomaDetails } from '../services/api'; 
 
 const Verify = () => {
     const [scannedHash, setScannedHash] = useState('');
     const [verificationStatus, setVerificationStatus] = useState('idle'); 
     const [blockchainData, setBlockchainData] = useState(null);
-    const [offChainData, setOffChainData] = useState(null); // State for MySQL data
+    const [offChainData, setOffChainData] = useState(null);
     const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState(''); // State baru untuk pesan sukses dinamis
 
     const [qrRegionId] = useState(`qr-reader-${Math.floor(Math.random() * 1000000)}`);
 
@@ -59,12 +60,13 @@ const Verify = () => {
     const handleVerification = async (hashToVerify) => {
         setVerificationStatus('loading');
         setErrorMessage('');
+        setSuccessMessage('');
         setBlockchainData(null);
         setOffChainData(null);
 
         if (!hashToVerify.startsWith('0x') || hashToVerify.length !== 66) {
             setVerificationStatus('invalid');
-            setErrorMessage('Invalid cryptographic hash format detected.');
+            setErrorMessage('Invalid cryptographic hash format detected. Please scan a valid VEDA QR Code.');
             return;
         }
 
@@ -81,6 +83,11 @@ const Verify = () => {
                         const dbResult = await getDiplomaDetails(hashToVerify);
                         setOffChainData(dbResult.data);
                         
+                        // Menangkap pesan sukses dari Backend FastAPI
+                        if (dbResult.message) {
+                            setSuccessMessage(dbResult.message);
+                        }
+
                         const issueDate = new Date(onChainResult.issuedAt * 1000).toLocaleString('en-US', {
                             dateStyle: 'long', timeStyle: 'medium'
                         });
@@ -89,16 +96,20 @@ const Verify = () => {
                         
                     } catch (dbError) {
                         setVerificationStatus('invalid');
-                        setErrorMessage("Blockchain verified, but clear-text data is missing or corrupted in the university database.");
+                        // MENGAMBIL PESAN ERROR DINAMIS DARI BACKEND
+                        // Prioritas: dbError.response.data.detail (standar FastAPI) -> fallback ke error standar
+                        const serverErrorMessage = dbError.response?.data?.detail || dbError.message || "Failed to fetch clear-text data from the university database.";
+                        setErrorMessage(serverErrorMessage);
                     }
                 }
             } else {
                 setVerificationStatus('invalid');
-                setErrorMessage("This cryptographic signature does not exist on the Sepolia Blockchain.");
+                setErrorMessage("FORGERY ALERT: This cryptographic signature does not exist on the Sepolia Blockchain.");
             }
         } catch (error) {
             setVerificationStatus('invalid');
-            setErrorMessage(error.message);
+            const rootErrorMessage = error.response?.data?.detail || error.message || "Unknown verification error occurred.";
+            setErrorMessage(rootErrorMessage);
         }
     };
 
@@ -110,6 +121,7 @@ const Verify = () => {
     const handleScanAnother = () => {
         setScannedHash('');
         setErrorMessage('');
+        setSuccessMessage('');
         setBlockchainData(null);
         setOffChainData(null);
         setVerificationStatus('idle'); 
@@ -130,11 +142,6 @@ const Verify = () => {
                         <div style={{ marginBottom: '20px' }}>
                             <div id={qrRegionId} style={{ width: '100%', border: 'none', borderRadius: '8px', overflow: 'hidden' }}></div>
                         </div>
-                        {/* <form onSubmit={handleManualSubmit} style={{ display: 'flex', gap: '10px' }}>
-                        
-                            <input type="text" placeholder="Or manually enter the Hash ID..." value={scannedHash} onChange={(e) => setScannedHash(e.target.value)} style={{ flex: 1, padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }} />
-                            <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Verify</button>
-                        </form> */}
                     </>
                 )}
 
@@ -150,13 +157,20 @@ const Verify = () => {
                 {verificationStatus !== 'idle' && verificationStatus !== 'loading' && (
                     <div style={{ marginTop: '20px' }}>
                         
-                        {/* 1. VALID RESULT (The Digital Profile Card) */}
+                        {/* 1. VALID RESULT */}
                         {verificationStatus === 'valid' && offChainData && (
                             <div style={{ border: '2px solid #00b300', borderRadius: '8px', overflow: 'hidden' }}>
                                 {/* Header */}
                                 <div style={{ backgroundColor: '#e6ffe6', padding: '20px', textAlign: 'center', borderBottom: '1px solid #00b300' }}>
                                     <h1 style={{ color: '#00b300', margin: '0 0 10px 0', fontSize: '32px' }}>✅ AUTHENTIC RECORD</h1>
-                                    <p style={{ color: '#006600', margin: '0', fontSize: '14px' }}>Secured by Ethereum Sepolia Network</p>
+                                    <p style={{ color: '#006600', margin: '0', fontSize: '14px', fontWeight: 'bold' }}>Secured by Ethereum Sepolia Network</p>
+                                    
+                                    {/* PESAN SUKSES DARI BACKEND DITAMPILKAN DI SINI */}
+                                    {successMessage && (
+                                        <p style={{ color: '#006600', margin: '10px 0 0 0', fontSize: '13px', fontStyle: 'italic' }}>
+                                            "{successMessage}"
+                                        </p>
+                                    )}
                                 </div>
                                 
                                 {/* Body: Student Profile */}
@@ -194,8 +208,15 @@ const Verify = () => {
                         {verificationStatus === 'invalid' && (
                             <div style={{ padding: '20px', backgroundColor: '#ffe6e6', border: '2px solid #cc0000', borderRadius: '8px', textAlign: 'center' }}>
                                 <h1 style={{ color: '#cc0000', margin: '0 0 10px 0', fontSize: '32px' }}>❌ VERIFICATION FAILED</h1>
-                                <p style={{ color: '#333', marginTop: '15px' }}>The document is either counterfeit, unregistered, or the data has been illegally manipulated.</p>
-                                {errorMessage && <p style={{ fontSize: '12px', color: '#cc0000', marginTop: '10px' }}>System Log: {errorMessage}</p>}
+                                <p style={{ color: '#333', marginTop: '15px', fontWeight: 'bold' }}>The document is either counterfeit, unregistered, or manipulated.</p>
+                                
+                                {/* PESAN ERROR DARI BACKEND DITAMPILKAN DI SINI SECARA PROMINEN */}
+                                {errorMessage && (
+                                    <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#fff', border: '1px solid #cc0000', borderRadius: '5px' }}>
+                                        <p style={{ margin: '0', fontSize: '12px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>Server Diagnostic Log:</p>
+                                        <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#cc0000' }}>{errorMessage}</p>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -208,7 +229,7 @@ const Verify = () => {
                         )}
 
                         <div style={{ textAlign: 'center' }}>
-                            <button onClick={handleScanAnother} style={{ marginTop: '20px', padding: '12px 25px', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+                            <button onClick={handleScanAnother} style={{ marginTop: '20px', padding: '12px 25px', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '16px' }}>
                                 Verify Another Document
                             </button>
                         </div>
@@ -219,7 +240,7 @@ const Verify = () => {
     );
 };
 
-// Helper Component for rendering data rows cleanly
+// Helper Component
 const DataField = ({ label, value, highlight }) => (
     <div style={{ backgroundColor: highlight ? '#fff4e6' : 'transparent', padding: highlight ? '8px' : '0', borderRadius: '4px' }}>
         <span style={{ display: 'block', fontSize: '12px', color: '#666', marginBottom: '2px' }}>{label}</span>

@@ -8,9 +8,6 @@ load_dotenv()
 DIPLOMA_REGISTRY_ADDRESS = os.getenv("DIPLOMA_REGISTRY_ADDRESS")
 ISSUER_REGISTRY_ADDRESS = os.getenv("ISSUER_REGISTRY_ADDRESS")
 
-# Di bawah ini adalah tempat Anda menempelkan ABI dari Remix.
-# Ingat, ABI bentuknya adalah List/Array [ ... ]
-
 
 ISSUER_REGISTRY_ABI = [
   {
