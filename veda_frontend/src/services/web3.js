@@ -1,77 +1,67 @@
 import { ethers } from 'ethers';
 
-// 1. Cek keberadaan MetaMask
+// 1. Check for MetaMask presence
 export const getProvider = () => {
     if (!window.ethereum) {
-        throw new Error("MetaMask tidak terdeteksi. Silakan install ekstensi MetaMask di browser Anda.");
+        throw new Error("MetaMask not detected. Please install the MetaMask extension in your browser.");
     }
-    // Ethers v6 menggunakan BrowserProvider
     return new ethers.BrowserProvider(window.ethereum);
 };
 
-// 2. Fungsi untuk Login / Connect Wallet
-export const connectWallet = async () => {
-    try {
-        const provider = getProvider();
-        // Memunculkan pop-up MetaMask meminta izin akses
-        const accounts = await provider.send("eth_requestAccounts", []);
-        return accounts[0]; // Mengembalikan alamat dompet pertama yang dipilih (0x...)
-    } catch (error) {
-        console.error("Gagal menghubungkan MetaMask:", error);
-        throw new Error("Gagal menghubungkan ke MetaMask. Pastikan Anda memberikan izin.");
-    }
-};
-
-// 3. Fungsi Utama: Mengirim Hash ke Smart Contract (Blockchain)
-export const issueDiplomaOnChain = async (contractAddress, contractABI, diplomaHash, universityId, studentId, requiredWallet) => {
+// 2. Issuance: Submit hash to Smart Contract (Sepolia)
+export const issueDiplomaOnChain = async (
+    contractAddress, 
+    contractABI, 
+    diplomaHash, 
+    universityId, 
+    studentId,
+    requiredWallet // The wallet that MUST be used
+) => {
     try {
         const provider = getProvider();
         const signer = await provider.getSigner();
         const connectedWallet = await signer.getAddress();
 
+        // Security Check: Ensure the user is using the wallet registered in our database
         if (connectedWallet.toLowerCase() !== requiredWallet.toLowerCase()) {
-            throw new Error(`Akses Ditolak! Akun MetaMask Anda (${connectedWallet}) tidak cocok dengan data Kampus di Database (${requiredWallet}).`);
+            throw new Error(`Access Denied! Your MetaMask account (${connectedWallet}) does not match the University record in our Database (${requiredWallet}).`);
         }
 
         const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
-        console.log("Menunggu persetujuan MetaMask...");
-        
-        // UBAH NAMA FUNGSI DI SINI, DAN MASUKKAN 3 VARIABEL!
+        // Call the Smart Contract function
         const tx = await contract.storeDiplomaHash(diplomaHash, universityId, studentId);
         
-        console.log(`Transaksi terkirim! Tx Hash: ${tx.hash}`);
-        await tx.wait(); 
-        
-        return tx.hash;
+        // Wait for 1 confirmation on the blockchain
+        const receipt = await tx.wait();
+        console.log("Blockchain Receipt:", receipt);
 
+        return tx.hash; // Return the Transaction Hash for database syncing
+        
     } catch (error) {
-        console.error("Transaksi Blockchain Gagal:", error);
+        console.error("Web3 Issuance Error:", error);
         if (error.code === 'ACTION_REJECTED') {
-            throw new Error("Transaksi dibatalkan oleh pengguna.");
+            throw new Error("Transaction was rejected by the user.");
         }
-        throw new Error(error.message || "Terjadi kesalahan saat memproses di Blockchain.");
+        throw new Error(error.message || "Failed to issue diploma on blockchain.");
     }
 };
 
-// ======================================================
-// VERIFICATION FUNCTION (READ-ONLY)
-// ======================================================
+// 3. Verification: Read state from Smart Contract
 export const verifyDiplomaOnChain = async (contractAddress, contractABI, diplomaHash) => {
     try {
-        // Use a CORS-friendly Public RPC Endpoint
+        // For reading, we can use a public RPC provider (No MetaMask required for verification)
         // Alternative 1: https://ethereum-sepolia-rpc.publicnode.com
         // Alternative 2: https://1rpc.io/sepolia
         // Alternative 3: https://rpc2.sepolia.org
         const RPC_URL = "https://ethereum-sepolia-rpc.publicnode.com";
+        const provider = new ethers.JsonRpcProvider(RPC_URL);
         
-        const publicProvider = new ethers.JsonRpcProvider(RPC_URL);
-        const contract = new ethers.Contract(contractAddress, contractABI, publicProvider);
+        const contract = new ethers.Contract(contractAddress, contractABI, provider);
 
-        // Call the external view function
+        // Call verifyDiploma view function
         const result = await contract.verifyDiploma(diplomaHash);
-
-        // Result maps to: (bool isValid, bool isRevoked, uint256 issuedAt)
+        
         return {
             isValid: result[0],
             isRevoked: result[1],

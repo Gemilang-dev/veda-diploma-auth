@@ -3,9 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { FaGraduationCap, FaQrcode, FaThLarge, FaCog, FaSignOutAlt } from 'react-icons/fa';
 
 const Sidebar = () => {
-    const location = useLocation(); // Untuk mendeteksi menu mana yang sedang aktif
+    const location = useLocation(); // To detect active menu item
 
-    // Daftar menu sidebar
+    // Sidebar menu items
     const menuItems = [
         { path: '/dashboard', name: 'Dashboard', icon: <FaThLarge /> },
         { path: '/issue', name: 'Issue Diploma', icon: <FaGraduationCap /> },
@@ -16,7 +16,7 @@ const Sidebar = () => {
     return (
         <div style={{ 
             width: '260px', 
-            backgroundColor: '#2C3E50', // Warna gelap persis seperti referensi Anda
+            backgroundColor: '#2C3E50', 
             color: 'white', 
             height: '100vh', 
             position: 'fixed', 
@@ -56,7 +56,7 @@ const Sidebar = () => {
                                 padding: '15px 25px',
                                 color: 'white',
                                 textDecoration: 'none',
-                                backgroundColor: isActive ? '#1abc9c' : 'transparent', // Warna hijau jika aktif
+                                backgroundColor: isActive ? '#1abc9c' : 'transparent', // Green if active
                                 borderLeft: isActive ? '4px solid #fff' : '4px solid transparent',
                                 transition: 'all 0.3s ease'
                             }}
@@ -68,7 +68,7 @@ const Sidebar = () => {
                 })}
             </nav>
 
-            {/* Logout Button di paling bawah */}
+            {/* Logout Button at the bottom */}
             <div style={{ padding: '20px' }}>
                 <Link to="/" style={{
                     display: 'flex', alignItems: 'center', gap: '15px', color: '#e74c3c', textDecoration: 'none', padding: '10px 5px'

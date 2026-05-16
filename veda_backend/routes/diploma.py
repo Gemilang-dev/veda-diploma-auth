@@ -11,24 +11,39 @@ from dotenv import load_dotenv
 
 router = APIRouter()
 
-load_dotenv()
+# Load environment variables
+dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+load_dotenv(dotenv_path)
+
 ALCHEMY_URL = os.getenv("ALCHEMY_SEPOLIA_URL")
 CONTRACT_ADDRESS = os.getenv("DIPLOMA_REGISTRY_ADDRESS")
+
+print(f"📡 [DEBUG] ALCHEMY_URL: {ALCHEMY_URL}")
+print(f"📡 [DEBUG] CONTRACT_ADDRESS: {CONTRACT_ADDRESS}")
 
 try:
     with open("abi.json", "r") as file:
         CONTRACT_ABI = json.load(file)
 except FileNotFoundError:
-    print("🚨 ERROR FATAL: File 'abi.json' tidak ditemukan di root folder!")
-    CONTRACT_ABI = []  # Mencegah aplikasi crash total
+    print("🚨 FATAL ERROR: 'abi.json' file not found in root folder!")
+    CONTRACT_ABI = []  # Prevent application from crashing completely
 except json.JSONDecodeError:
-    print("🚨 ERROR FATAL: Isi file 'abi.json' bukan format JSON yang valid!")
+    print("🚨 FATAL ERROR: 'abi.json' file content is not valid JSON!")
     CONTRACT_ABI = []
 
-# 3. Setup Koneksi Web3
+# 3. Setup Web3 Connection
+contract = None
 try:
+    if not ALCHEMY_URL:
+        raise ValueError("ALCHEMY_SEPOLIA_URL is not set in .env")
+    if not CONTRACT_ADDRESS:
+        raise ValueError("DIPLOMA_REGISTRY_ADDRESS is not set in .env")
+        
     w3 = Web3(Web3.HTTPProvider(ALCHEMY_URL))
-    contract = w3.eth.contract(address=CONTRACT_ADDRESS, abi=CONTRACT_ABI)
+    if not w3.is_connected():
+        raise ConnectionError("Failed to connect to Ethereum network via Alchemy")
+        
+    contract = w3.eth.contract(address=Web3.to_checksum_address(CONTRACT_ADDRESS), abi=CONTRACT_ABI)
     print("✅ Web3 Connection Setup Successful in diploma.py")
 except Exception as e:
     print(f"❌ Failed to setup Web3: {e}")
@@ -176,7 +191,7 @@ async def confirm_diploma_transaction(
         db.commit()
         db.refresh(record)
         
-        print(f"✅ [DEBUG] SUCCESS: Diploma '{record.diploma_id}' status updated to SUCCESS!")
+        print(f"✅ [DEBUG] SUCCESS: Diploma '{record.diploma_hash}' status updated to SUCCESS!")
         
         return {
             "status": "success", 
@@ -199,7 +214,7 @@ async def confirm_diploma_transaction(
 # ==========================================
 @router.get("/verify/{diploma_hash}")
 async def verify_diploma(diploma_hash: str, db: Session = Depends(get_db)):
-    # 1. AMBIL DATA DARI MYSQL
+    # 1. FETCH DATA FROM MYSQL
     record = db.query(models.DiplomaRecord).filter(
         models.DiplomaRecord.diploma_hash == diploma_hash
     ).first()
@@ -218,31 +233,34 @@ async def verify_diploma(diploma_hash: str, db: Session = Depends(get_db)):
     calculated_hash = f"0x{hashlib.sha256(raw_data.encode()).hexdigest()}"
 
     if calculated_hash != record.diploma_hash:
-        # Jika ini gagal, berarti ada ADMIN NAKAL yang mengubah data langsung di database MySQL
+        # If this fails, it means an administrator tampered with SQL data directly
         raise HTTPException(
             status_code=400, 
             detail="INTERNAL TAMPERING DETECTED: SQL data does not match the stored hash."
         )
 
     # 3. BLOCKCHAIN CROSS-CHECK (The Alchemy Part)
-    # Kita memanggil fungsi 'verifyDiploma' (atau sejenisnya) di Smart Contract
+    # We call the 'verifyDiploma' function on the Smart Contract
     try:
-        # Panggil fungsi verifyDiploma. 
-        # Karena Solidity me-return 3 nilai, Python akan menerimanya sebagai Tuple (List)
+        if contract is None:
+            raise Exception("Blockchain contract is not initialized. Please check server logs for setup errors.")
+
+        # Call verifyDiploma. 
+        # Solidity returns 3 values, Python receives them as a Tuple
         blockchain_result = contract.functions.verifyDiploma(record.diploma_hash).call()
         
         is_valid_on_chain = blockchain_result[0]   # Index 0: bool isValid
         is_revoked_on_chain = blockchain_result[1] # Index 1: bool isRevoked
-        # issued_at = blockchain_result[2]         # Index 2: uint256 issuedAt (Opsional jika ingin dipakai)
+        # issued_at = blockchain_result[2]         # Index 2: uint256 issuedAt
 
-        # Cek Skenario 1: Apakah ijazah ini pernah dicabut (Revoked)?
+        # Scenario 1: Has this diploma been revoked?
         if is_revoked_on_chain:
             raise HTTPException(
                 status_code=400,
                 detail="REVOKED: This diploma was registered but has been officially REVOKED by the University."
             )
 
-        # Cek Skenario 2: Apakah ijazah ini valid (terdaftar dan tidak dicabut)?
+        # Scenario 2: Is this diploma valid on-chain?
         if not is_valid_on_chain:
             raise HTTPException(
                 status_code=400,
@@ -250,10 +268,10 @@ async def verify_diploma(diploma_hash: str, db: Session = Depends(get_db)):
             )
 
     except HTTPException:
-        # Biarkan pesan error spesifik kita (Revoked/Forgery) lolos ke Frontend
+        # Let our specific error messages pass to Frontend
         raise
     except Exception as e:
-        # Menangkap error jaringan Alchemy / ABI mismatch
+        # Catch Alchemy network errors / ABI mismatch
         print(f"Blockchain Connection Error: {str(e)}")
         raise HTTPException(
             status_code=500,
@@ -265,9 +283,8 @@ async def verify_diploma(diploma_hash: str, db: Session = Depends(get_db)):
         "status": "Verified",
         "message": "This diploma is 100% Authentic (Verified by Blockchain & Local Database)",
         "data": {
-            # Pastikan nama key (kiri) sama dengan yang dipanggil di React kamu
             "student_name": record.student_name,
-            "student_id": record.student_id,  # Ini NIM
+            "student_id": record.student_id,  # Student ID (NIM)
             "national_diploma_number": record.national_diploma_number,
             "university_name": record.university_name,
             "study_program_name": record.study_program_name,

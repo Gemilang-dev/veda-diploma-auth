@@ -38,6 +38,13 @@ class IssuerCreate(BaseModel):
     password: str
     wallet_address: str
 
+class IssuerUpdate(BaseModel):
+    university_name: str = None
+    email: str = None
+    password: str = None
+    wallet_address: str = None
+    status: str = None # 'Active' or 'Inactive'
+
 class IssuerLogin(BaseModel):
     email: str
     password: str

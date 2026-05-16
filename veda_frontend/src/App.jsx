@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import DashboardLayout from './components/DashboardLayout';
 import IssueDiploma from './pages/Issue'; // Sesuaikan lokasi file Issue.jsx Anda
 import VerifyDocument from './pages/Verify';
+import UserManagement from './pages/UserManagement';
 
 // Komponen Sementara (Placeholder)
 const UnderConstruction = ({ title }) => (
@@ -39,7 +40,7 @@ export default function App() {
         {/* SUPER ADMIN ROUTES (Sidebar mode Admin) */}
         <Route path="/admin" element={<DashboardLayout role="admin" />}>
           <Route path="dashboard" element={<UnderConstruction title="Admin Dashboard" />} />
-          <Route path="users" element={<UnderConstruction title="User Management" />} />
+          <Route path="users" element={<UserManagement />} />
           <Route path="issue" element={<IssueDiploma />} />
           <Route path="verify" element={<VerifyDocument />} />
           <Route path="settings" element={<UnderConstruction title="System Settings" />} />

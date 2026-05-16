@@ -2,9 +2,9 @@ from sqlalchemy import Column, Integer, String, Enum, ForeignKey
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
-from sqlalchemy import DateTime # Pastikan DateTime juga diimpor dari sqlalchemy
+from sqlalchemy import DateTime # Ensure DateTime is imported from sqlalchemy
 
-# 1. Tabel Super Admin (Pihak yang mendaftarkan kampus)
+# 1. Super Admin Table (Entity that registers universities)
 class Admin(Base):
     __tablename__ = "tbl_admin"
 
@@ -12,13 +12,13 @@ class Admin(Base):
     username = Column(String(50), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
 
-# 2. Tabel Issuer (Pihak Kampus)
+# 2. Issuer Table (University entities)
 class Issuer(Base):
     __tablename__ = "tbl_issuer"
 
     id_issuer = Column(Integer, primary_key=True, index=True, autoincrement=True)
     
-    # Foreign Key ke tbl_admin (Sesuai constraint Anda: RESTRICT dan CASCADE)
+    # Foreign Key to tbl_admin
     created_by = Column(
         Integer, 
         ForeignKey("tbl_admin.id_admin", ondelete="RESTRICT", onupdate="CASCADE"), 
@@ -28,13 +28,13 @@ class Issuer(Base):
     university_name = Column(String(150), nullable=False)
     email = Column(String(100), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    wallet_address = Column(String(42), nullable=False) # Alamat Web3 Ethereum (0x...)
+    wallet_address = Column(String(42), nullable=False) # Web3 Ethereum Address (0x...)
     
-    # Tipe ENUM untuk status aktif/inaktif
+    # ENUM type for active/inactive status
     status = Column(Enum('Active', 'Inactive', name="issuer_status_enum"), default='Active')
 
 # ==========================================
-# 3. TABEL INDEKS IJAZAH (Zero-Data Storage)
+# 3. DIPLOMA INDEX TABLE (Zero-Data Storage)
 # ==========================================
 class DiplomaRecord(Base):
     __tablename__ = "tbl_diploma_record"
@@ -57,7 +57,7 @@ class DiplomaRecord(Base):
     student_name = Column(String(150), nullable=True)
     place_of_birth = Column(String(100), nullable=True)
     date_of_birth = Column(String(50), nullable=True)
-    student_id = Column(String(50), nullable=True) # NIM
+    student_id = Column(String(50), nullable=True) # Student ID (NIM)
     academic_degree = Column(String(100), nullable=True)
     gpa = Column(String(10), nullable=True)
     graduation_date = Column(String(50), nullable=True)

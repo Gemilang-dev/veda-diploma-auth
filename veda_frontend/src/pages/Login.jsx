@@ -7,20 +7,20 @@ export default function Login() {
   const navigate = useNavigate();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   
-  // State untuk form
+  // Form state
   const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   // ==========================================
-  // SATPAM LOGIN (Reverse Route Guard)
+  // LOGIN GUARD (Reverse Route Guard)
   // ==========================================
   useEffect(() => {
     const token = localStorage.getItem('veda_token');
     const role = localStorage.getItem('veda_role');
 
-    // Jika user sudah punya token (sudah login), jangan biarkan di halaman login
+    // If user is already logged in, redirect them away from the login page
     if (token) {
       if (role === 'admin') {
         navigate('/admin/dashboard', { replace: true });
@@ -36,20 +36,20 @@ export default function Login() {
     setError('');
 
     try {
-      // 1. Tentukan URL API dan Role berdasarkan Toggle
+      // 1. Determine API URL and Role based on Toggle
       const apiUrl = isSuperAdmin 
-        ? 'http://127.0.0.1:8000/api/auth/login' // Endpoint Super Admin
-        : 'http://127.0.0.1:8000/api/issuer/login'; // Endpoint Kampus
+        ? 'http://127.0.0.1:8000/api/auth/login' // Super Admin Endpoint
+        : 'http://127.0.0.1:8000/api/issuer/login'; // University Endpoint
 
       const userRole = isSuperAdmin ? 'admin' : 'university';
       const redirectPath = isSuperAdmin ? '/admin/dashboard' : '/university/issue';
 
-      // 2. Siapkan Data (FastAPI OAuth2 butuh format x-www-form-urlencoded)
+      // 2. Prepare Data (FastAPI OAuth2 requires x-www-form-urlencoded format)
       const formData = new URLSearchParams();
       formData.append('username', emailOrUsername); 
       formData.append('password', password);
 
-      // 3. Tembak API Backend
+      // 3. Call Backend API
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -59,31 +59,30 @@ export default function Login() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || "Terjadi kesalahan saat login");
+        throw new Error(data.detail || "An error occurred during login");
       }
 
-      // 4. Simpan Token dan Role ke Local Storage Browser
+      // 4. Store Token and Role in Browser Local Storage
       localStorage.setItem('veda_token', data.access_token);
       localStorage.setItem('veda_role', userRole);
 
       // ==========================================
-      // 5. BONGKAR TOKEN JWT UNTUK MENGAMBIL ID
+      // 5. DECODE JWT TOKEN TO EXTRACT IDS
       // ==========================================
-      // Memperbaiki base64 decoding agar lebih aman terhadap karakter khusus
       const payloadBase64 = data.access_token.split('.')[1];
       const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
       const decodedPayload = JSON.parse(atob(base64)); 
 
       if (isSuperAdmin) {
-        // Simpan data spesifik Admin
+        // Store Admin-specific data
         if (decodedPayload.id_admin) localStorage.setItem('veda_admin_id', decodedPayload.id_admin);
         if (decodedPayload.sub) localStorage.setItem('veda_admin_username', decodedPayload.sub);
       } else {
-        // Simpan data spesifik Kampus
+        // Store University-specific data
         if (decodedPayload.id_issuer) localStorage.setItem('veda_issuer_id', decodedPayload.id_issuer);
       }
 
-      // 6. Arahkan ke Dashboard
+      // 6. Redirect to Dashboard
       navigate(redirectPath);
 
     } catch (err) {
@@ -94,7 +93,7 @@ export default function Login() {
   };
 
   // ==========================================
-  // HANDLER LOGIN GOOGLE
+  // GOOGLE LOGIN HANDLER
   // ==========================================
   const handleGoogleSuccess = async (credentialResponse) => {
     setLoading(true);
@@ -109,7 +108,7 @@ export default function Login() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || "Login Google gagal");
+        throw new Error(data.detail || "Google Login failed");
       }
 
       localStorage.setItem('veda_token', data.access_token);
@@ -136,7 +135,7 @@ export default function Login() {
       <Paper elevation={3} sx={{ p: 5, width: '100%', maxWidth: 400, borderRadius: 3, textAlign: 'center' }}>
         
         <Typography variant="h5" sx={{ fontWeight: 800, color: '#34495e', mb: 1 }}>
-          {isSuperAdmin ? 'Login as Administration Admin' : 'Login as University Admin'}
+          {isSuperAdmin ? 'Login as System Administrator' : 'Login as University Admin'}
         </Typography>
         <Typography variant="body2" sx={{ color: '#7f8c8d', mb: 4 }}>
           Enter your credentials to access the system
@@ -145,7 +144,7 @@ export default function Login() {
         <form onSubmit={handleLogin}>
           <TextField 
             fullWidth 
-            label={isSuperAdmin ? "Username Admin" : "Email Kampus"} 
+            label={isSuperAdmin ? "Admin Username" : "University Email"} 
             margin="normal" required 
             value={emailOrUsername}
             onChange={(e) => setEmailOrUsername(e.target.value)}
@@ -193,11 +192,11 @@ export default function Login() {
           onClick={() => {
             setIsSuperAdmin(!isSuperAdmin);
             setError(''); 
-            setEmailOrUsername(''); // Kosongkan input saat ganti mode
+            setEmailOrUsername(''); // Clear input on mode change
             setPassword('');
           }}
         >
-          {isSuperAdmin ? 'Login as University Admin?' : 'Login as Administration Admin?'}
+          {isSuperAdmin ? 'Login as University Admin?' : 'Login as System Administrator?'}
         </Typography>
 
       </Paper>

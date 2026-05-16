@@ -17,7 +17,7 @@ export default function DashboardLayout({ role }) {
   const profile = {
     guest: { name: 'Guest', desc: 'Public Verifier' },
     university: { name: 'University Admin', desc: 'Issuer Portal' }, 
-    admin: { name: 'Super Admin', desc: 'Veda Core' }
+    admin: { name: 'System Administrator', desc: 'Veda Core' }
   };
 
   const getMenus = () => {

@@ -9,7 +9,7 @@ const Verify = () => {
     const [blockchainData, setBlockchainData] = useState(null);
     const [offChainData, setOffChainData] = useState(null);
     const [errorMessage, setErrorMessage] = useState('');
-    const [successMessage, setSuccessMessage] = useState(''); // State baru untuk pesan sukses dinamis
+    const [successMessage, setSuccessMessage] = useState(''); // New state for dynamic success messages
 
     const [qrRegionId] = useState(`qr-reader-${Math.floor(Math.random() * 1000000)}`);
 
@@ -83,7 +83,7 @@ const Verify = () => {
                         const dbResult = await getDiplomaDetails(hashToVerify);
                         setOffChainData(dbResult.data);
                         
-                        // Menangkap pesan sukses dari Backend FastAPI
+                        // Capture success message from FastAPI Backend
                         if (dbResult.message) {
                             setSuccessMessage(dbResult.message);
                         }
@@ -96,8 +96,7 @@ const Verify = () => {
                         
                     } catch (dbError) {
                         setVerificationStatus('invalid');
-                        // MENGAMBIL PESAN ERROR DINAMIS DARI BACKEND
-                        // Prioritas: dbError.response.data.detail (standar FastAPI) -> fallback ke error standar
+                        // DYNAMIC ERROR MESSAGE FROM BACKEND
                         const serverErrorMessage = dbError.response?.data?.detail || dbError.message || "Failed to fetch clear-text data from the university database.";
                         setErrorMessage(serverErrorMessage);
                     }
@@ -165,7 +164,7 @@ const Verify = () => {
                                     <h1 style={{ color: '#00b300', margin: '0 0 10px 0', fontSize: '32px' }}>✅ AUTHENTIC RECORD</h1>
                                     <p style={{ color: '#006600', margin: '0', fontSize: '14px', fontWeight: 'bold' }}>Secured by Ethereum Sepolia Network</p>
                                     
-                                    {/* PESAN SUKSES DARI BACKEND DITAMPILKAN DI SINI */}
+                                    {/* SUCCESS MESSAGE FROM BACKEND DISPLAYED HERE */}
                                     {successMessage && (
                                         <p style={{ color: '#006600', margin: '10px 0 0 0', fontSize: '13px', fontStyle: 'italic' }}>
                                             "{successMessage}"
@@ -210,7 +209,7 @@ const Verify = () => {
                                 <h1 style={{ color: '#cc0000', margin: '0 0 10px 0', fontSize: '32px' }}>❌ VERIFICATION FAILED</h1>
                                 <p style={{ color: '#333', marginTop: '15px', fontWeight: 'bold' }}>The document is either counterfeit, unregistered, or manipulated.</p>
                                 
-                                {/* PESAN ERROR DARI BACKEND DITAMPILKAN DI SINI SECARA PROMINEN */}
+                                {/* SERVER ERROR MESSAGE DISPLAYED HERE */}
                                 {errorMessage && (
                                     <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#fff', border: '1px solid #cc0000', borderRadius: '5px' }}>
                                         <p style={{ margin: '0', fontSize: '12px', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>Server Diagnostic Log:</p>
@@ -228,8 +227,45 @@ const Verify = () => {
                             </div>
                         )}
 
-                        <div style={{ textAlign: 'center' }}>
-                            <button onClick={handleScanAnother} style={{ marginTop: '20px', padding: '12px 25px', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '16px' }}>
+                        <div style={{ textAlign: 'center', marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '15px', alignItems: 'center' }}>
+                            {/* Etherscan Button (Left) */}
+                            {verificationStatus === 'valid' && offChainData?.tx_hash && (
+                                <a 
+                                    href={`https://sepolia.etherscan.io/tx/${offChainData.tx_hash}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    style={{
+                                        display: 'inline-block',
+                                        padding: '12px 25px',
+                                        backgroundColor: '#0052FF',
+                                        color: 'white',
+                                        textDecoration: 'none',
+                                        borderRadius: '5px',
+                                        fontSize: '16px',
+                                        fontWeight: 'bold',
+                                        transition: 'background-color 0.2s'
+                                    }}
+                                    onMouseOver={(e) => e.target.style.backgroundColor = '#003eb3'}
+                                    onMouseOut={(e) => e.target.style.backgroundColor = '#0052FF'}
+                                >
+                                    🔍 View on Etherscan
+                                </a>
+                            )}
+
+                            {/* Reset Button (Right) */}
+                            <button 
+                                onClick={handleScanAnother} 
+                                style={{ 
+                                    padding: '12px 25px', 
+                                    backgroundColor: '#333', 
+                                    color: 'white', 
+                                    border: 'none', 
+                                    borderRadius: '5px', 
+                                    cursor: 'pointer', 
+                                    fontSize: '16px',
+                                    fontWeight: 'bold'
+                                }}
+                            >
                                 Verify Another Document
                             </button>
                         </div>
