@@ -5,6 +5,8 @@ from datetime import datetime, timedelta # [BARU] Untuk mengatur waktu kedaluwar
 from jose import jwt # [BARU] Library pembuat token JWT
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 import models
 import schemas
@@ -17,13 +19,15 @@ router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # ==========================================
-# KONFIGURASI JWT (JSON Web Token)
+# KONFIGURASI JWT & GOOGLE
 # ==========================================
 # Ganti dengan kunci rahasia yang acak dan panjang untuk skripsi Anda nanti
 SECRET_KEY = "VEDA_SKRIPSI_RAHASIA_SUPER_KUAT_123!@#" 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30 # Token hangus dalam 30 menit
 
+# [GANTI INI] Masukkan Google Client ID Anda di sini
+GOOGLE_CLIENT_ID = "626526137992-5qmt3cgqbkp4s94dmcrdjhcgp76f8uai.apps.googleusercontent.com"
 
 # Di dalam routes/auth.py
 
@@ -156,3 +160,46 @@ def login_admin(
     )
     
     return {"access_token": access_token, "token_type": "bearer"}
+
+# ==========================================
+# ENDPOINT: LOGIN GOOGLE (KAMPUS)
+# ==========================================
+@router.post("/google-login", response_model=schemas.Token)
+def google_login(request_data: schemas.GoogleLoginRequest, db: Session = Depends(get_db)):
+    try:
+        # Verifikasi token ID Google
+        id_info = id_token.verify_oauth2_token(
+            request_data.token, 
+            requests.Request(), 
+            GOOGLE_CLIENT_ID
+        )
+
+        # Ambil email dari payload Google
+        email = id_info.get("email")
+        
+        # Cari issuer berdasarkan email
+        issuer = db.query(models.Issuer).filter(models.Issuer.email == email).first()
+        
+        if not issuer:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Email Google tidak terdaftar sebagai akun Kampus!"
+            )
+        
+        # Buat token JWT untuk Issuer
+        access_token = create_access_token(
+            data={
+                "sub": issuer.email, 
+                "id_issuer": issuer.id_issuer, 
+                "role": "kampus"
+            }
+        )
+        
+        return {"access_token": access_token, "token_type": "bearer"}
+
+    except ValueError:
+        # Token tidak valid
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token Google tidak valid!"
+        )

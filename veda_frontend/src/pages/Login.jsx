@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Paper, Typography, TextField, Button, CircularProgress } from '@mui/material';
+import { Box, Paper, Typography, TextField, Button, CircularProgress, Divider } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -92,6 +93,44 @@ export default function Login() {
     }
   };
 
+  // ==========================================
+  // HANDLER LOGIN GOOGLE
+  // ==========================================
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/auth/google-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: credentialResponse.credential }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Login Google gagal");
+      }
+
+      localStorage.setItem('veda_token', data.access_token);
+      localStorage.setItem('veda_role', 'university');
+
+      const payloadBase64 = data.access_token.split('.')[1];
+      const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+      const decodedPayload = JSON.parse(atob(base64)); 
+      
+      if (decodedPayload.id_issuer) {
+        localStorage.setItem('veda_issuer_id', decodedPayload.id_issuer);
+      }
+
+      navigate('/university/issue');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#2C3E50' }}>
       <Paper elevation={3} sx={{ p: 5, width: '100%', maxWidth: 400, borderRadius: 3, textAlign: 'center' }}>
@@ -131,6 +170,22 @@ export default function Login() {
             {loading ? <CircularProgress size={24} color="inherit" /> : 'LOGIN'}
           </Button>
         </form>
+
+        {/* GOOGLE LOGIN BUTTON (Only for University Admin) */}
+        {!isSuperAdmin && (
+          <>
+            <Divider sx={{ my: 2 }}>OR</Divider>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1, mb: 2 }}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError('Google Login Failed')}
+                useOneTap
+                theme="filled_blue"
+                shape="rectangular"
+              />
+            </Box>
+          </>
+        )}
 
         <Typography 
           variant="body2" 
