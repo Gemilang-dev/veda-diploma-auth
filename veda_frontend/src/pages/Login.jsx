@@ -25,7 +25,7 @@ export default function Login() {
       if (role === 'admin') {
         navigate('/admin/dashboard', { replace: true });
       } else if (role === 'university') {
-        navigate('/university/issue', { replace: true });
+        navigate('/university/dashboard', { replace: true });
       }
     }
   }, [navigate]);
@@ -42,7 +42,6 @@ export default function Login() {
         : 'http://127.0.0.1:8000/api/issuer/login'; // University Endpoint
 
       const userRole = isSuperAdmin ? 'admin' : 'university';
-      const redirectPath = isSuperAdmin ? '/admin/dashboard' : '/university/issue';
 
       // 2. Prepare Data (FastAPI OAuth2 requires x-www-form-urlencoded format)
       const formData = new URLSearchParams();
@@ -80,9 +79,11 @@ export default function Login() {
       } else {
         // Store University-specific data
         if (decodedPayload.id_issuer) localStorage.setItem('veda_issuer_id', decodedPayload.id_issuer);
+        if (decodedPayload.university_name) localStorage.setItem('veda_university_name', decodedPayload.university_name);
       }
 
       // 6. Redirect to Dashboard
+      const redirectPath = isSuperAdmin ? '/admin/dashboard' : '/university/dashboard';
       navigate(redirectPath);
 
     } catch (err) {
@@ -121,8 +122,11 @@ export default function Login() {
       if (decodedPayload.id_issuer) {
         localStorage.setItem('veda_issuer_id', decodedPayload.id_issuer);
       }
+      if (decodedPayload.university_name) {
+        localStorage.setItem('veda_university_name', decodedPayload.university_name);
+      }
 
-      navigate('/university/issue');
+      navigate('/university/dashboard');
     } catch (err) {
       setError(err.message);
     } finally {

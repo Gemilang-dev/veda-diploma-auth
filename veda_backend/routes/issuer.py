@@ -143,6 +143,7 @@ def login_issuer(
         data={
             "sub": issuer.email, 
             "id_issuer": issuer.id_issuer, 
+            "university_name": issuer.university_name,
             "role": "kampus"
         }
     )

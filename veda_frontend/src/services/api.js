@@ -1,20 +1,35 @@
 import axios from 'axios';
 
 // Axios base configuration
-// Ensure the port matches your FastAPI server (usually 8000)
-const apiClient = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api/diploma',
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
+
+const api = axios.create({
+    baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },
 });
+
+// Interceptor to add JWT token to every request automatically
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('veda_token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
 
 /**
  * Sends diploma data to backend for hashing and database queuing.
  */
 export const prepareDiploma = async (diplomaData) => {
     try {
-        const response = await apiClient.post('/prepare', diplomaData);
+        const response = await api.post('/diploma/prepare', diplomaData);
         return response.data;
     } catch (error) {
         console.error("API Error (Prepare):", error);
@@ -29,7 +44,7 @@ export const prepareDiploma = async (diplomaData) => {
  */
 export const confirmDiploma = async (recordId, txHash) => {
     try {
-        const response = await apiClient.patch(`/confirm/${recordId}?tx_hash=${txHash}`);
+        const response = await api.patch(`/diploma/confirm/${recordId}?tx_hash=${txHash}`);
         return response.data;
     } catch (error) {
         console.error("API Error (Confirm):", error);
@@ -44,7 +59,7 @@ export const confirmDiploma = async (recordId, txHash) => {
  */
 export const getDiplomaDetails = async (diplomaHash) => {
     try {
-        const response = await apiClient.get(`/verify/${diplomaHash}`);
+        const response = await api.get(`/diploma/verify/${diplomaHash}`);
         return response.data;
     } catch (error) {
         throw new Error(
@@ -52,3 +67,5 @@ export const getDiplomaDetails = async (diplomaHash) => {
         );
     }
 };
+
+export default api;

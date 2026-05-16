@@ -23,6 +23,7 @@ export default function DashboardLayout({ role }) {
   const getMenus = () => {
     if (role === 'guest') return [{ title: 'Verify Document', path: '/guest/verify' }];
     if (role === 'university') return [
+      { title: 'Dashboard', path: '/university/dashboard' },
       { title: 'Issue Diploma', path: '/university/issue' },
       { title: 'Verify Document', path: '/university/verify' }
     ];

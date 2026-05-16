@@ -9,6 +9,7 @@ import DashboardLayout from './components/DashboardLayout';
 import IssueDiploma from './pages/Issue'; // Sesuaikan lokasi file Issue.jsx Anda
 import VerifyDocument from './pages/Verify';
 import UserManagement from './pages/UserManagement';
+import IssuerDashboard from './pages/IssuerDashboard';
 
 // Komponen Sementara (Placeholder)
 const UnderConstruction = ({ title }) => (
@@ -33,6 +34,7 @@ export default function App() {
 
         {/* UNIVERSITY ADMIN ROUTES (Sidebar mode Univ) */}
         <Route path="/university" element={<DashboardLayout role="university" />}>
+          <Route path="dashboard" element={<IssuerDashboard />} />
           <Route path="issue" element={<IssueDiploma />} />
           <Route path="verify" element={<VerifyDocument />} />
         </Route>
