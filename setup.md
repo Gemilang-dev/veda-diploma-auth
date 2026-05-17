@@ -73,3 +73,5 @@ Cara Menjalankan Frontend:
   * Authorized redirect URIs: http://localhost:5173 (atau sesuaikan dengan callback route login Anda)
   * Pastikan TIDAK ADA tanda garis miring (/) di bagian akhir URL pada Google Console.
 - Sinkronisasi: Jangan lupa menyalin Google Client ID baru hasil generate ke file .env proyek Anda agar fitur Login Google dapat langsung digunakan.
+
+

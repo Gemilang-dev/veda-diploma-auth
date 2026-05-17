@@ -11,25 +11,18 @@ from dotenv import load_dotenv
 
 router = APIRouter()
 
+from contracts import DIPLOMA_REGISTRY_ABI, DIPLOMA_REGISTRY_ADDRESS
+
 # Load environment variables
 dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
 load_dotenv(dotenv_path)
 
 ALCHEMY_URL = os.getenv("ALCHEMY_SEPOLIA_URL")
-CONTRACT_ADDRESS = os.getenv("DIPLOMA_REGISTRY_ADDRESS")
+CONTRACT_ADDRESS = DIPLOMA_REGISTRY_ADDRESS
+CONTRACT_ABI = DIPLOMA_REGISTRY_ABI
 
 print(f"📡 [DEBUG] ALCHEMY_URL: {ALCHEMY_URL}")
 print(f"📡 [DEBUG] CONTRACT_ADDRESS: {CONTRACT_ADDRESS}")
-
-try:
-    with open("abi.json", "r") as file:
-        CONTRACT_ABI = json.load(file)
-except FileNotFoundError:
-    print("🚨 FATAL ERROR: 'abi.json' file not found in root folder!")
-    CONTRACT_ABI = []  # Prevent application from crashing completely
-except json.JSONDecodeError:
-    print("🚨 FATAL ERROR: 'abi.json' file content is not valid JSON!")
-    CONTRACT_ABI = []
 
 # 3. Setup Web3 Connection
 contract = None

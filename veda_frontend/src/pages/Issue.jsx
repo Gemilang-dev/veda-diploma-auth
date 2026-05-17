@@ -11,6 +11,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
+import DIPLOMA_ABI from '../abi/Diploma.json';
 
 const FormGrid = styled(Grid)(() => ({
   display: 'flex',
@@ -147,11 +148,12 @@ export default function IssueDiploma() {
       const required_wallet = responseData.blockchain_payload.wallet_address; 
       const record_id = responseData.database_info.record_id;
       
-      const contractABI = ["function storeDiplomaHash(bytes32 diplomaHash, string universityId, string studentId) public"];
+      const contractABI = DIPLOMA_ABI;
 
       setStatus('Waiting for MetaMask Confirmation...');
+      const CONTRACT_ADDRESS = import.meta.env.VITE_DIPLOMA_REGISTRY_ADDRESS;
       const txHash = await issueDiplomaOnChain(
-          "0x6075Ab0B2868483092Bc7cE9a78cb7821D31a268", 
+          CONTRACT_ADDRESS, 
           contractABI,
           diploma_hash,
           formData.university_id_code,
@@ -190,6 +192,15 @@ export default function IssueDiploma() {
                 DIPLOMA ISSUANCE PORTAL
               </Typography>
           </Box>
+
+          {status && (
+            <Box sx={{ mb: 4, p: 2, borderRadius: 2, backgroundColor: status.startsWith('Error:') ? '#fdeded' : '#eafaf1', border: `1px solid ${status.startsWith('Error:') ? '#e74c3c' : '#2ecc71'}` }}>
+              <Typography variant="body1" sx={{ color: status.startsWith('Error:') ? '#c0392b' : '#27ae60', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                {status.startsWith('Error:') ? '❌' : <CircularProgress size={16} color="inherit" />}
+                {status}
+              </Typography>
+            </Box>
+          )}
 
           {!isSuccess && (
             <>

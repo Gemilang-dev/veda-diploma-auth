@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { verifyDiplomaOnChain } from '../services/web3';
 import { getDiplomaDetails } from '../services/api'; 
+import DIPLOMA_ABI from '../abi/Diploma.json';
 
 const Verify = () => {
     const [scannedHash, setScannedHash] = useState('');
@@ -13,10 +14,8 @@ const Verify = () => {
 
     const [qrRegionId] = useState(`qr-reader-${Math.floor(Math.random() * 1000000)}`);
 
-    const CONTRACT_ADDRESS = "0x6075Ab0B2868483092Bc7cE9a78cb7821D31a268"; 
-    const CONTRACT_ABI = [
-        "function verifyDiploma(bytes32 _diplomaHash) external view returns (bool isValid, bool isRevoked, uint256 issuedAt)"
-    ];
+    const CONTRACT_ADDRESS = import.meta.env.VITE_DIPLOMA_REGISTRY_ADDRESS; 
+    const CONTRACT_ABI = DIPLOMA_ABI;
 
     useEffect(() => {
         let scanner = null;
