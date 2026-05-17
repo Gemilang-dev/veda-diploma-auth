@@ -5,6 +5,8 @@ import schemas
 from database import get_db
 # Import security dependencies and helper functions from auth.py
 from routes.auth import get_current_admin, get_password_hash, verify_password, create_access_token
+from blockchain_utils import register_issuer_on_blockchain
+
 router = APIRouter()
 
 # ==========================================
@@ -34,11 +36,35 @@ def register_issuer(
         wallet_address=issuer.wallet_address
     )
 
-    # 4. Save to database
-    db.add(new_issuer)
-    db.commit()
-    db.refresh(new_issuer)
-    return new_issuer
+    try:
+        # 4. Save to database
+        db.add(new_issuer)
+        db.commit()
+        db.refresh(new_issuer)
+
+        # 5. REGISTER ON BLOCKCHAIN (AUTOMATION)
+        # Using id_issuer as a temporary unique ID for the blockchain
+        univ_id = f"UNIV-{new_issuer.id_issuer}"
+        print(f"🚀 [Automation] Triggering Blockchain registration for ID: {univ_id}")
+        
+        tx_hash = register_issuer_on_blockchain(
+            new_issuer.wallet_address,
+            univ_id,
+            new_issuer.university_name
+        )
+        
+        print(f"✅ [Automation] Blockchain registration success! Tx: {tx_hash}")
+        
+        return new_issuer
+
+    except Exception as e:
+        # If blockchain fails, we might want to rollback the DB or at least inform the user
+        db.rollback()
+        print(f"🚨 [Automation Error] Blockchain registration failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Database saved, but Blockchain registration failed: {str(e)}. Please check Admin ETH balance."
+        )
 
 # ==========================================
 # ENDPOINT: LIST ALL UNIVERSITIES (SUPER ADMIN ONLY)
