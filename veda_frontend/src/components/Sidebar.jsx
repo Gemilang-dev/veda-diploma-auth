@@ -10,7 +10,7 @@ const Sidebar = () => {
         { path: '/dashboard', name: 'Dashboard', icon: <FaThLarge /> },
         { path: '/issue', name: 'Issue Diploma', icon: <FaGraduationCap /> },
         { path: '/verify', name: 'Verify Document', icon: <FaQrcode /> },
-        { path: '/settings', name: 'Settings', icon: <FaCog /> },
+        // { path: '/settings', name: 'Settings', icon: <FaCog /> },
     ];
 
     return (
