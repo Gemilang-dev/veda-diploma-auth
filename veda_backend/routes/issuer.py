@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Form
 from sqlalchemy.orm import Session
-import models
-import schemas
-from database import get_db
+from veda_backend import models, schemas
+from veda_backend.database import get_db
 # Import security dependencies and helper functions from auth.py
-from routes.auth import get_current_admin, get_password_hash, verify_password, create_access_token
-from blockchain_utils import register_issuer_on_blockchain
+from veda_backend.routes.auth import get_current_admin, get_password_hash, verify_password, create_access_token
+from veda_backend.blockchain_utils import register_issuer_on_blockchain
 
 router = APIRouter()
 
@@ -46,15 +45,15 @@ def register_issuer(
         # Using id_issuer as a temporary unique ID for the blockchain
         univ_id = f"UNIV-{new_issuer.id_issuer}"
         print(f"🚀 [Automation] Triggering Blockchain registration for ID: {univ_id}")
-        
+
         tx_hash = register_issuer_on_blockchain(
             new_issuer.wallet_address,
             univ_id,
             new_issuer.university_name
         )
-        
+
         print(f"✅ [Automation] Blockchain registration success! Tx: {tx_hash}")
-        
+
         return new_issuer
 
     except Exception as e:
@@ -123,7 +122,7 @@ def delete_issuer(
     issuer = db.query(models.Issuer).filter(models.Issuer.id_issuer == issuer_id).first()
     if not issuer:
         raise HTTPException(status_code=404, detail="University account not found!")
-    
+
     # Check if this issuer has already issued diplomas
     has_diplomas = db.query(models.DiplomaRecord).filter(models.DiplomaRecord.issued_by == issuer_id).first()
     if has_diplomas:
@@ -149,14 +148,14 @@ def login_issuer(
 ):
     # 1. Find university data by email
     issuer = db.query(models.Issuer).filter(models.Issuer.email == username).first()
-    
+
     # 2. If university not found or password incorrect
     if not issuer or not verify_password(password, issuer.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password!"
         )
-        
+
     # 3. ACCOUNT STATUS CHECK: If Inactive, deny access!
     if issuer.status != 'Active':
         raise HTTPException(
@@ -173,5 +172,5 @@ def login_issuer(
             "role": "kampus"
         }
     )
-    
+
     return {"access_token": access_token, "token_type": "bearer"}

@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 # 1. Connection address to your MySQL database
 # Using PyMySQL as driver, 'root' as username, empty password, and 'veda' as database name

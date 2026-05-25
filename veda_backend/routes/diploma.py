@@ -1,17 +1,16 @@
 import os
 import hashlib 
-import models
-import schemas
+from veda_backend import models, schemas
 import json
 from web3 import Web3
 from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
-from database import get_db
+from veda_backend.database import get_db
 from dotenv import load_dotenv
 
 router = APIRouter()
 
-from contracts import DIPLOMA_REGISTRY_ABI, DIPLOMA_REGISTRY_ADDRESS
+from veda_backend.contracts import DIPLOMA_REGISTRY_ABI, DIPLOMA_REGISTRY_ADDRESS
 
 # Load environment variables
 dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
@@ -41,6 +40,8 @@ try:
 except Exception as e:
     print(f"❌ Failed to setup Web3: {e}")
 
+from veda_backend.blockchain_utils import generate_diploma_hash
+
 # ==========================================
 # 1. PREPARATION PHASE (OFF-CHAIN HASHING)
 # ==========================================
@@ -67,21 +68,13 @@ async def prepare_diploma(
 
         # Step 2: National Standard Data Aggregation & Cryptographic Hashing
         print("⚙️ [DEBUG 3] Executing SHA-256 Hashing on National Standard Data...")
-        data_to_hash = (
-            f"{payload.national_diploma_number}|{payload.university_name}|{payload.university_id_code}|"
-            f"{payload.higher_education_program}|{payload.study_program_name}|{payload.study_program_id}|"
-            f"{payload.student_name}|{payload.place_of_birth}|{payload.date_of_birth}|{payload.student_id}|"
-            f"{payload.academic_degree}|{payload.gpa}|{payload.graduation_date}|"
-            f"{payload.issuance_location}|{payload.issuance_date}|{payload.signatory_name}|{payload.signatory_title}"
-        )
-
-        diploma_hash = "0x" + hashlib.sha256(data_to_hash.encode()).hexdigest()
+        diploma_hash = generate_diploma_hash(payload.dict())
         print(f"✅ [DEBUG 3] SUCCESS: Cryptographic Fingerprint generated -> {diploma_hash}")
 
 # Step 3: Blockchain Hash Duplication Check
         print("🔍 [DEBUG 4] Scanning database for hash duplication...")
         existing_record = db.query(models.DiplomaRecord).filter(
-            models.DiplomaRecord.diploma_hash == diploma_hash # Updated here
+            models.DiplomaRecord.diploma_hash == diploma_hash
         ).first()
         
         if existing_record:
@@ -93,7 +86,7 @@ async def prepare_diploma(
 # Step 4: Queue the Transaction and Store Off-Chain Data in MySQL
         print("💾 [DEBUG 5] Committing comprehensive record to database queue...")
         new_record = models.DiplomaRecord(
-            diploma_hash=diploma_hash, # Updated here
+            diploma_hash=diploma_hash,
             student_id=payload.student_id,
             issued_by=payload.id_issuer,
             status='Pending',
@@ -216,14 +209,27 @@ async def verify_diploma(diploma_hash: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Diploma data not found in our records.")
 
     # 2. INTERNAL INTEGRITY CHECK (Re-hash SQL data)
-    raw_data = (
-        f"{record.national_diploma_number}|{record.university_name}|{record.university_id_code}|"
-        f"{record.higher_education_program}|{record.study_program_name}|{record.study_program_id}|"
-        f"{record.student_name}|{record.place_of_birth}|{record.date_of_birth}|{record.student_id}|"
-        f"{record.academic_degree}|{record.gpa}|{record.graduation_date}|"
-        f"{record.issuance_location}|{record.issuance_date}|{record.signatory_name}|{record.signatory_title}"
-    )
-    calculated_hash = f"0x{hashlib.sha256(raw_data.encode()).hexdigest()}"
+    # Convert SQLAlchemy model to dict for generate_diploma_hash
+    record_dict = {
+        "national_diploma_number": record.national_diploma_number,
+        "university_name": record.university_name,
+        "university_id_code": record.university_id_code,
+        "higher_education_program": record.higher_education_program,
+        "study_program_name": record.study_program_name,
+        "study_program_id": record.study_program_id,
+        "student_name": record.student_name,
+        "place_of_birth": record.place_of_birth,
+        "date_of_birth": record.date_of_birth,
+        "student_id": record.student_id,
+        "academic_degree": record.academic_degree,
+        "gpa": record.gpa,
+        "graduation_date": record.graduation_date,
+        "issuance_location": record.issuance_location,
+        "issuance_date": record.issuance_date,
+        "signatory_name": record.signatory_name,
+        "signatory_title": record.signatory_title
+    }
+    calculated_hash = generate_diploma_hash(record_dict)
 
     if calculated_hash != record.diploma_hash:
         # If this fails, it means an administrator tampered with SQL data directly
@@ -231,6 +237,7 @@ async def verify_diploma(diploma_hash: str, db: Session = Depends(get_db)):
             status_code=400, 
             detail="INTERNAL TAMPERING DETECTED: SQL data does not match the stored hash."
         )
+
 
     # 3. BLOCKCHAIN CROSS-CHECK (The Alchemy Part)
     # We call the 'verifyDiploma' function on the Smart Contract

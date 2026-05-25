@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 
 # ==========================================
@@ -16,8 +16,7 @@ class AdminResponse(BaseModel):
     id_admin: int
     username: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ==========================================
 # 🔑 AUTHENTICATION SCHEMAS
@@ -57,8 +56,7 @@ class IssuerResponse(BaseModel):
     wallet_address: str
     status: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ==========================================
 # 🎓 DIPLOMA (NATIONAL STANDARD + GPA)
@@ -103,5 +101,4 @@ class DiplomaResponse(BaseModel):
     issued_at: datetime
     status: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

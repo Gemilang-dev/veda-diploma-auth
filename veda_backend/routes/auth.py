@@ -8,9 +8,8 @@ from jose import JWTError
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
-import models
-import schemas
-from database import get_db
+from veda_backend import models, schemas
+from veda_backend.database import get_db
 
 # Initialize Router
 router = APIRouter()

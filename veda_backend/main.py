@@ -1,21 +1,21 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import models               # <-- Tambahkan ini
-from database import engine # <-- Tambahkan ini
-from routes import auth, issuer, diploma, analytics
+from veda_backend import models
+from veda_backend.database import engine
+from veda_backend.routes import auth, issuer, diploma, analytics
 
 
-# Perintah ajaib untuk membuat tabel secara otomatis di MySQL
+# Automatically create tables in MySQL based on the models
 models.Base.metadata.create_all(bind=engine)
 
-# Inisialisasi Aplikasi FastAPI
+# Initialize FastAPI Application
 app = FastAPI(
     title="VEDA API",
     description="Backend API for Diploma Verification System",
     version="1.0.0"
 )
 
-# Konfigurasi CORS (Penting agar Frontend React nanti bisa mengambil data dari sini)
+# CORS Configuration (Required for React Frontend to access this API)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], # In production, replace with your frontend domain
@@ -24,14 +24,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# [BARU] Daftarkan router Auth ke server dengan prefix /api/auth
+# Register routers with their respective prefixes and tags
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
-app.include_router(issuer.router, prefix="/api/issuer", tags=["Issuer (University)"]) #
+app.include_router(issuer.router, prefix="/api/issuer", tags=["Issuer (University)"])
 app.include_router(diploma.router, prefix="/api/diploma", tags=["Diploma"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"])
 
 
-# Endpoint Root (To check if server is running)
+# Root Endpoint (To check if the server is running)
 @app.get("/")
 def read_root():
     return {
