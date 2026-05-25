@@ -1,0 +1,27 @@
+stateDiagram-v2
+    [*] --> Dashboard: Login as University
+    Dashboard --> FormPage: Navigate to "Issue Diploma"
+    FormPage --> InputData: Fill Student & Diploma Details
+    InputData --> PrepareAPI: POST /api/diploma/prepare
+    
+    state PrepareAPI {
+        [*] --> HashGeneration: Generate SHA-256
+        HashGeneration --> SaveDB: Store in tbl_diploma_record (Pending)
+        SaveDB --> ReturnHash: Return ID & Hash to FE
+    }
+    
+    ReturnHash --> MetaMask: Request User Signature
+    
+    state BlockchainTx {
+        [*] --> WalletCheck: Ensure connected wallet matches DB
+        WalletCheck --> ContractCall: Call storeDiplomaHash(...)
+        ContractCall --> WaitConfirm: Wait for 1 Confirmation
+        WaitConfirm --> SuccessTx: Get tx_hash
+    }
+    
+    MetaMask --> BlockchainTx
+    BlockchainTx --> ConfirmAPI: PATCH /api/diploma/confirm/{id}?tx_hash=...
+    
+    ConfirmAPI --> UpdateDB: Update Status to "Success"
+    UpdateDB --> SuccessPage: Show Success Notification
+    SuccessPage --> [*]

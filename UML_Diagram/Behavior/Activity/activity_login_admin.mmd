@@ -1,0 +1,19 @@
+stateDiagram-v2
+    [*] --> LoginPage: Open Login Page
+    LoginPage --> SelectAdmin: Choose "Login as System Administrator"
+    SelectAdmin --> InputCredentials: Enter Username & Password
+    InputCredentials --> Submit: Click LOGIN
+    
+    Submit --> API_Call: POST /api/auth/login
+    state API_Call {
+        [*] --> ValidateDB: Check credentials in tbl_admin
+        ValidateDB --> AuthSuccess: Match
+        ValidateDB --> AuthFail: No Match
+    }
+    
+    AuthFail --> LoginPage: Show Error Message
+    
+    AuthSuccess --> CreateToken: Generate JWT (Role: admin)
+    CreateToken --> StoreLocal: Save veda_token & veda_role
+    StoreLocal --> Redirect: Navigate to /admin/dashboard
+    Redirect --> [*]

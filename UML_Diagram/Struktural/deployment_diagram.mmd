@@ -1,0 +1,34 @@
+graph TD
+    subgraph "Client Tier"
+        Browser[User Browser]
+        MM[MetaMask Extension]
+    end
+
+    subgraph "Web Tier"
+        Vite[Vite Dev Server / Static Hosting]
+        React[React Application]
+    end
+
+    subgraph "Application Tier"
+        FastAPI[FastAPI Server]
+        Uvicorn[Uvicorn ASGI]
+    end
+
+    subgraph "Data Tier"
+        MySQL[(MySQL Database)]
+        IPFS[IPFS - Optional/Future]
+    end
+
+    subgraph "Blockchain Tier"
+        Sepolia[Ethereum Sepolia Testnet]
+        Nodes[Infura / Alchemy Nodes]
+    end
+
+    Browser <--> Vite
+    Vite --- React
+    React <--> FastAPI
+    FastAPI <--> MySQL
+    React <--> MM
+    MM <--> Sepolia
+    Sepolia --- Nodes
+    FastAPI -- Read Only --> Nodes

@@ -1,0 +1,26 @@
+sequenceDiagram
+    actor Admin as Super Admin
+    participant FE as React Frontend
+    participant BE as FastAPI Backend
+    participant DB as MySQL Database
+    participant BC as Ethereum (Admin Script)
+
+    Admin->>FE: Input University Details (Name, Email, Wallet)
+    FE->>BE: POST /api/issuer/register (Auth: Admin Token)
+    BE->>BE: Verify Admin Token
+    BE->>DB: Check if Email exists
+    
+    alt Email Unique
+        BE->>DB: Insert into tbl_issuer
+        DB-->>BE: id_issuer generated
+        
+        Note over BE, BC: Automated Blockchain Sync
+        BE->>BC: register_issuer_on_blockchain(wallet, univ_id, name)
+        BC-->>BE: Transaction Hash
+        
+        BE-->>FE: 201 Created
+        FE-->>Admin: Show Success Notification
+    else Email Taken
+        BE-->>FE: 400 Bad Request
+        FE-->>Admin: Show Error
+    end

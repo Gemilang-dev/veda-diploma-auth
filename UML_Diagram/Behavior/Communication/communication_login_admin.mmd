@@ -1,0 +1,13 @@
+graph TD
+    Admin((Super Admin))
+    FE[React Frontend]
+    BE[FastAPI Backend]
+    DB[(MySQL Database)]
+
+    Admin -- "1: Enter Credentials" --> FE
+    FE -- "2: POST /api/auth/login" --> BE
+    BE -- "3: Query User" --> DB
+    DB -- "4: Admin Data" --> BE
+    BE -- "5: Verify Hash & Create JWT" --> BE
+    BE -- "6: Return Token" --> FE
+    FE -- "7: Store LocalStorage & Redirect" --> FE

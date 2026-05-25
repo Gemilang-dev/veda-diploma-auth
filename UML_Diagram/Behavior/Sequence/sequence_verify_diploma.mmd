@@ -1,0 +1,23 @@
+sequenceDiagram
+    actor Verifier as Public/Verifier
+    participant FE as React Frontend
+    participant BE as FastAPI Backend
+    participant DB as MySQL Database
+    participant BC as Ethereum (Sepolia)
+
+    Verifier->>FE: Input Diploma Hash
+    FE->>BE: GET /api/diploma/verify/{hash}
+    BE->>DB: Query tbl_diploma_record by hash
+    
+    alt Found in DB
+        DB-->>BE: Diploma Data (tx_hash, student_name, etc.)
+        BE-->>FE: 200 OK (data)
+        FE->>BC: ethers.verifyDiploma(hash)
+        BC-->>FE: On-chain Status (isValid, isRevoked, timestamp)
+        FE->>FE: Compare DB Data vs On-chain Data
+        FE-->>Verifier: Display Success & Verified Badge
+    else Not Found
+        DB-->>BE: None
+        BE-->>FE: 404 Not Found
+        FE-->>Verifier: Display "Invalid Diploma"
+    end

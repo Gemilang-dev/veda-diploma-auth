@@ -1,0 +1,35 @@
+stateDiagram-v2
+    [*] --> LoginPage: Open Login Page
+    LoginPage --> SelectIssuer: Default / Choose "Login as University Admin"
+    
+    state Choice_Method <<choice>>
+    SelectIssuer --> Choice_Method
+    
+    Choice_Method --> FormLogin: Email & Password
+    Choice_Method --> GoogleLogin: Google Auth Button
+    
+    state FormLogin {
+        [*] --> InputForm: Enter Email & Password
+        InputForm --> SubmitForm: Click LOGIN
+        SubmitForm --> API_Form: POST /api/issuer/login
+        API_Form --> ValidateForm: Check tbl_issuer & Status='Active'
+    }
+    
+    state GoogleLogin {
+        [*] --> GooglePopup: Choose Google Account
+        GooglePopup --> API_Google: POST /api/auth/google-login (token)
+        API_Google --> ValidateGoogle: Verify ID Token & Check Email in DB & Status='Active'
+    }
+    
+    ValidateForm --> Success: Credentials Valid
+    ValidateForm --> Fail: Invalid/Inactive
+    
+    ValidateGoogle --> Success: Google Email Registered
+    ValidateGoogle --> Fail: Email Not Found/Inactive
+    
+    Fail --> LoginPage: Show Error Message
+    
+    Success --> CreateToken: Generate JWT (Role: kampus)
+    CreateToken --> StoreLocal: Save veda_token & veda_role
+    StoreLocal --> Redirect: Navigate to /university/dashboard
+    Redirect --> [*]

@@ -1,0 +1,17 @@
+graph TD
+    Issuer((University Admin))
+    FE[React Frontend]
+    BE[FastAPI Backend]
+    DB[(MySQL Database)]
+    BC[Ethereum / MetaMask]
+
+    Issuer -- "1: Submit Diploma Data" --> FE
+    FE -- "2: POST /api/diploma/prepare" --> BE
+    BE -- "3: Generate Hash & Save Pending" --> DB
+    BE -- "4: Return Record ID & Hash" --> FE
+    FE -- "5: Request Signature" --> BC
+    BC -- "6: storeDiplomaHash() & Confirm" --> BC
+    BC -- "7: Return Transaction Hash" --> FE
+    FE -- "8: PATCH /api/diploma/confirm" --> BE
+    BE -- "9: Update Status to Success" --> DB
+    BE -- "10: Success Response" --> FE

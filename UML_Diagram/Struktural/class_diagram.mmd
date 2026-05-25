@@ -1,0 +1,46 @@
+classDiagram
+    class Admin {
+        +int id_admin
+        +string username
+        +string password_hash
+    }
+
+    class Issuer {
+        +int id_issuer
+        +int created_by
+        +string university_name
+        +string email
+        +string password_hash
+        +string wallet_address
+        +Enum status
+    }
+
+    class DiplomaRecord {
+        +int id
+        +string diploma_hash
+        +string tx_hash
+        +string student_name
+        +string student_id
+        +string national_diploma_number
+        +string status
+        +int issued_by
+        +datetime issued_at
+    }
+
+    class DiplomaRegistry {
+        <<Smart Contract>>
+        +storeDiplomaHash(hash, univId, studentId)
+        +verifyDiploma(hash)
+        +revokeDiploma(hash)
+    }
+
+    class IssuerRegistry {
+        <<Smart Contract>>
+        +registerIssuer(address, name)
+        +deactivateIssuer(address)
+    }
+
+    Admin "1" -- "0..*" Issuer : manages
+    Issuer "1" -- "0..*" DiplomaRecord : issues
+    DiplomaRecord ..> DiplomaRegistry : recorded on
+    Issuer ..> IssuerRegistry : authorized by

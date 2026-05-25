@@ -1,0 +1,14 @@
+graph TD
+    Admin((Super Admin))
+    FE[React Frontend]
+    BE[FastAPI Backend]
+    DB[(MySQL Database)]
+    BC[Ethereum / Admin Wallet]
+
+    Admin -- "1: Input Issuer Data" --> FE
+    FE -- "2: POST /api/issuer/register" --> BE
+    BE -- "3: Verify Token & Check Email" --> DB
+    BE -- "4: Save to tbl_issuer" --> DB
+    BE -- "5: register_issuer_on_blockchain()" --> BC
+    BC -- "6: Tx Confirmation" --> BE
+    BE -- "7: Success Response" --> FE

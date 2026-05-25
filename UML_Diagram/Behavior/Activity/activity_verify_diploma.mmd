@@ -1,0 +1,33 @@
+stateDiagram-v2
+    [*] --> InputHash: Verifier enters Diploma Hash
+    InputHash --> FetchDB: Request details from Backend
+    
+    state FetchDB {
+        [*] --> CheckDB
+        CheckDB --> ValidDB: Found in DB
+        CheckDB --> NotFound: Not Found
+    }
+    
+    FetchDB --> FetchBC: Found in DB
+    FetchDB --> [*]: Not Found (Invalid)
+    
+    state FetchBC {
+        [*] --> CallContract: verifyDiploma(hash)
+        CallContract --> BC_Valid: Exists & Not Revoked
+        CallContract --> BC_Revoked: Is Revoked
+        CallContract --> BC_Invalid: Does Not Exist
+    }
+    
+    FetchBC --> Comparison: Data Retrieved
+    
+    state Comparison {
+        [*] --> CompareData: Compare DB Hash vs BC Hash
+        CompareData --> ResultMatch: Hash Matches
+        CompareData --> ResultMismatch: Hash Mismatch
+    }
+    
+    Comparison --> Validated: Hash Matches & BC Valid
+    Validated --> [*]
+    
+    Comparison --> Invalid: Mismatch or BC Invalid
+    Invalid --> [*]

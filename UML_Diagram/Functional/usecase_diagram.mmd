@@ -1,0 +1,29 @@
+graph TD
+    subgraph "VEDA System"
+        UC1(Login)
+        UC2(Register University/Issuer)
+        UC3(Manage Universities)
+        UC4(View Admin Analytics)
+        UC5(Input Diploma Data)
+        UC6(Issue Diploma to Blockchain)
+        UC7(View Issuer Analytics)
+        UC8(Verify Diploma Authenticity)
+        UC9(Check Blockchain Status)
+    end
+
+    Admin((Super Admin))
+    Issuer((University/Issuer))
+    Verifier((Public/Verifier))
+
+    Admin --> UC1
+    Admin --> UC2
+    Admin --> UC3
+    Admin --> UC4
+
+    Issuer --> UC1
+    Issuer --> UC5
+    Issuer --> UC6
+    Issuer --> UC7
+
+    Verifier --> UC8
+    Verifier --> UC9

@@ -1,0 +1,15 @@
+graph TD
+    Verifier((Public Verifier))
+    FE[React Frontend]
+    BE[FastAPI Backend]
+    DB[(MySQL Database)]
+    BC[Ethereum Sepolia]
+
+    Verifier -- "1: Enter Diploma Hash" --> FE
+    FE -- "2: GET /api/diploma/verify/{hash}" --> BE
+    BE -- "3: Query Metadata" --> DB
+    DB -- "4: Student & Tx Data" --> BE
+    BE -- "5: Return Data" --> FE
+    FE -- "6: verifyDiploma(hash)" --> BC
+    BC -- "7: On-chain Status" --> FE
+    FE -- "8: Compare & Display Result" --> FE

@@ -1,0 +1,39 @@
+stateDiagram-v2
+    [*] --> AdminDashboard: Login as Super Admin
+    AdminDashboard --> UserManagement: Navigate to "User Management"
+    
+    state ActionChoice <<choice>>
+    UserManagement --> ActionChoice
+    
+    ActionChoice --> AddIssuer: Create New University
+    ActionChoice --> EditIssuer: Update Existing University
+    ActionChoice --> DeleteOrDeactivate: Remove / Disable Account
+    
+    state AddIssuer {
+        [*] --> InputDetails: University Name, Email, Wallet
+        InputDetails --> API_Add: POST /api/issuer/register
+        API_Add --> DB_Save: Insert into tbl_issuer
+        DB_Save --> BC_Sync: register_issuer_on_blockchain()
+        BC_Sync --> SuccessAdd: Done
+    }
+    
+    state EditIssuer {
+        [*] --> ModifyFields: Change Name, Wallet, or Password
+        ModifyFields --> API_Update: PATCH /api/issuer/{id}
+        API_Update --> DB_Update: Update tbl_issuer
+        DB_Update --> SuccessEdit: Done
+    }
+    
+    state DeleteOrDeactivate {
+        [*] --> CheckHistory: Has the university issued diplomas?
+        CheckHistory --> DeleteAllowed: No Diplomas
+        CheckHistory --> DeactivateOnly: Has Diplomas
+        
+        DeleteAllowed --> API_Delete: DELETE /api/issuer/{id}
+        DeactivateOnly --> API_Deactivate: PATCH status='Inactive'
+    }
+    
+    SuccessAdd --> UserManagement
+    SuccessEdit --> UserManagement
+    API_Delete --> UserManagement
+    API_Deactivate --> UserManagement

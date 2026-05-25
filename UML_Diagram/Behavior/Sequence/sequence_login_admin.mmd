@@ -1,0 +1,21 @@
+sequenceDiagram
+    actor Admin as Super Admin
+    participant FE as React Frontend
+    participant BE as FastAPI Backend
+    participant DB as MySQL Database
+
+    Admin->>FE: Enter Username & Password
+    FE->>BE: POST /api/auth/login (form-data)
+    BE->>DB: Query Admin by Username
+    DB-->>BE: Admin Record & Hashed Password
+    BE->>BE: Verify Password (Bcrypt)
+    
+    alt Credentials Valid
+        BE->>BE: Create JWT (sub: username, role: admin)
+        BE-->>FE: 200 OK (access_token)
+        FE->>FE: Store token & role in LocalStorage
+        FE-->>Admin: Redirect to Admin Dashboard
+    else Credentials Invalid
+        BE-->>FE: 401 Unauthorized
+        FE-->>Admin: Show Error Message
+    end

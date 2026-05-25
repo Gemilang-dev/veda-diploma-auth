@@ -1,0 +1,28 @@
+graph LR
+    subgraph "veda_frontend (React + Vite)"
+        FE_Pages[src/pages]
+        FE_Comps[src/components]
+        FE_Services[src/services]
+        FE_ABI[src/abi]
+    end
+
+    subgraph "veda_backend (FastAPI + SQLAlchemy)"
+        BE_Routes[routes/]
+        BE_Models[models.py]
+        BE_Schemas[schemas.py]
+        BE_Utils[blockchain_utils.py]
+        BE_DB[database.py]
+    end
+
+    subgraph "blockchain (Solidity)"
+        SC_Diploma[DiplomaRegistry.sol]
+        SC_Issuer[IssuerRegistry.sol]
+    end
+
+    FE_Services --> BE_Routes
+    FE_Services --> BC_Network[Ethereum Network]
+    BE_Routes --> BE_Models
+    BE_Models --> BE_DB
+    BE_Utils --> FE_ABI
+    SC_Diploma -- Compiled --> FE_ABI
+    SC_Issuer -- Compiled --> FE_ABI

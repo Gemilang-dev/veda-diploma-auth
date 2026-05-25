@@ -1,0 +1,34 @@
+sequenceDiagram
+    actor Issuer as University Admin
+    participant FE as React Frontend
+    participant Google as Google OAuth API
+    participant BE as FastAPI Backend
+    participant DB as MySQL Database
+
+    rect rgb(240, 240, 240)
+        Note over Issuer, DB: Method 1: Email/Password
+        Issuer->>FE: Enter Email & Password
+        FE->>BE: POST /api/issuer/login (form-data)
+        BE->>DB: Query Issuer by Email
+        DB-->>BE: Issuer Record (Status, Hash)
+        BE->>BE: Verify Password & Status=='Active'
+        BE->>BE: Create JWT (role: kampus)
+        BE-->>FE: 200 OK (access_token)
+    end
+
+    rect rgb(230, 240, 255)
+        Note over Issuer, DB: Method 2: Google Login
+        Issuer->>FE: Click "Sign in with Google"
+        FE->>Google: Authenticate User
+        Google-->>FE: Return ID Token
+        FE->>BE: POST /api/auth/google-login (id_token)
+        BE->>Google: Verify ID Token
+        BE->>DB: Query Issuer by Google Email
+        DB-->>BE: Issuer Record (Status)
+        BE->>BE: Verify Status=='Active'
+        BE->>BE: Create JWT (role: kampus)
+        BE-->>FE: 200 OK (access_token)
+    end
+
+    FE->>FE: Store token & role in LocalStorage
+    FE-->>Issuer: Redirect to University Dashboard

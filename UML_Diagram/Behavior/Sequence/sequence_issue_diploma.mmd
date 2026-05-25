@@ -1,0 +1,21 @@
+sequenceDiagram
+    participant User as University Issuer
+    participant FE as React Frontend
+    participant BE as FastAPI Backend
+    participant DB as MySQL Database
+    participant BC as Ethereum (Sepolia)
+
+    User->>FE: Input Diploma Data
+    FE->>BE: POST /api/diploma/prepare (data)
+    BE->>BE: Generate SHA-256 Hash
+    BE->>DB: Save Record (Status: Pending)
+    BE-->>FE: Return recordId & diplomaHash
+    
+    FE->>FE: Request MetaMask Signature
+    FE->>BC: storeDiplomaHash(hash, univId, studentId)
+    BC-->>FE: Return Transaction Hash (txHash)
+    
+    FE->>BE: PATCH /api/diploma/confirm/{id} (txHash)
+    BE->>DB: Update Record (Status: Success, tx_hash)
+    BE-->>FE: Success Response
+    FE-->>User: Diploma Issued Successfully
