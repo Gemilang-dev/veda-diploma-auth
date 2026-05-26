@@ -74,4 +74,29 @@ Cara Menjalankan Frontend:
   * Pastikan TIDAK ADA tanda garis miring (/) di bagian akhir URL pada Google Console.
 - Sinkronisasi: Jangan lupa menyalin Google Client ID baru hasil generate ke file .env proyek Anda agar fitur Login Google dapat langsung digunakan.
 
+-----------------------------------------------------------------
+4. PENGUJIAN (TESTING)
+-----------------------------------------------------------------
+
+Sistem VEDA dilengkapi dengan rangkaian pengujian otomatis untuk menjamin kualitas kode.
+
+A. Pengujian Backend (Pytest):
+1. Masuk ke folder backend: cd veda_backend
+2. Aktifkan venv: source venv/bin/activate
+3. Jalankan pengujian: 
+   python -m pytest ../testing/backend/ -v
+4. Untuk melihat laporan coverage:
+   python -m pytest --cov=veda_backend ../testing/backend/
+
+B. Pengujian Frontend (Vitest):
+1. Masuk ke folder frontend: cd veda_frontend
+2. Jalankan pengujian:
+   npm run test
+   (atau `npx vitest run ../testing/frontend/`)
+
+C. Pengujian End-to-End (Playwright):
+1. Masuk ke folder root proyek.
+2. Jalankan pengujian E2E:
+   npx playwright test
+
 

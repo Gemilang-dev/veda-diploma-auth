@@ -137,6 +137,52 @@ def test_verify_diploma_success(client, db, active_issuer, mocker):
     assert response.status_code == 200
     assert response.json()["status"] == "Verified"
 
+def test_verify_diploma_revoked(client, db, active_issuer, mocker):
+    """Test verification for a revoked diploma"""
+    data = {"student_name": "Revoked Student", "student_id": "R1"}
+    h = generate_diploma_hash(data)
+    record = models.DiplomaRecord(diploma_hash=h, status="Success", issued_by=active_issuer.id_issuer, **data)
+    db.add(record)
+    db.commit()
+    
+    mock_contract = mocker.patch("veda_backend.routes.diploma.contract")
+    # isValid=True, isRevoked=True
+    mock_contract.functions.verifyDiploma.return_value.call.return_value = (True, True, 123)
+    
+    response = client.get(f"/api/diploma/verify/{h}")
+    assert response.status_code == 400
+    assert "REVOKED" in response.json()["detail"]
+
+def test_verify_diploma_forgery(client, db, active_issuer, mocker):
+    """Test verification for a diploma not on blockchain (forgery)"""
+    data = {"student_name": "Forgery Student", "student_id": "F1"}
+    h = generate_diploma_hash(data)
+    record = models.DiplomaRecord(diploma_hash=h, status="Success", issued_by=active_issuer.id_issuer, **data)
+    db.add(record)
+    db.commit()
+    
+    mock_contract = mocker.patch("veda_backend.routes.diploma.contract")
+    # isValid=False, isRevoked=False
+    mock_contract.functions.verifyDiploma.return_value.call.return_value = (False, False, 0)
+    
+    response = client.get(f"/api/diploma/verify/{h}")
+    assert response.status_code == 400
+    assert "FORGERY ALERT" in response.json()["detail"]
+
+def test_verify_diploma_tampered(client, db, active_issuer, mocker):
+    """Test verification when SQL data has been tampered with"""
+    data = {"student_name": "Original", "student_id": "O1"}
+    h = generate_diploma_hash(data)
+    # Store with tampered student name
+    record = models.DiplomaRecord(diploma_hash=h, status="Success", issued_by=active_issuer.id_issuer, **data)
+    record.student_name = "Tampered" 
+    db.add(record)
+    db.commit()
+    
+    response = client.get(f"/api/diploma/verify/{h}")
+    assert response.status_code == 400
+    assert "INTERNAL TAMPERING DETECTED" in response.json()["detail"]
+
 def test_verify_diploma_not_found(client, db):
     """Test verification for non-existent hash"""
     response = client.get("/api/diploma/verify/0xnonexistent")
