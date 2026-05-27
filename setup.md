@@ -20,17 +20,17 @@ Langkah Awal (Jika folder 'venv' belum dibuat/tidak ada):
    python3 -m venv venv
 
 Cara Menjalankan Backend:
-1. Buka terminal baru dan masuk ke folder backend Anda:
-   cd /path/to/your/veda_backend
+1. Buka terminal baru dan masuk ke folder ROOT proyek Anda:
+   cd /home/ray/Skripsi/veda-diploma-auth
 
 2. Aktifkan Virtual Environment (venv):
-   source venv/bin/activate
+   source veda_backend/venv/bin/activate
   
 3. Install atau perbarui dependensi library (Hanya jika venv baru dibuat):
    pip install --upgrade pip
-   pip install -r requirements.txt
+   pip install -r veda_backend/requirements.txt
    *Catatan: Jika file requirements.txt tidak ditemukan, install library utama secara manual:
-   pip install fastapi uvicorn sqlalchemy mysqlconnector-python python-dotenv web3
+   pip install fastapi uvicorn sqlalchemy pymysql python-dotenv web3 passlib[bcrypt] python-jose[cryptography] python-multipart google-auth
 
 4. Pastikan Database MySQL Anda sudah menyala:
    - Jika menggunakan XAMPP/LAMPP Linux:
@@ -38,8 +38,9 @@ Cara Menjalankan Backend:
    - Jika menggunakan MySQL native:
      sudo systemctl start mysql
 
-5. Jalankan server backend FastAPI menggunakan Uvicorn:
-   uvicorn main:app --reload
+5. Jalankan server backend FastAPI menggunakan Uvicorn (Pastikan berada di ROOT):
+   export PYTHONPATH=$PYTHONPATH:.
+   uvicorn veda_backend.main:app --reload
 
 6. Backend sekarang aktif secara lokal di: http://127.0.0.1:8000
 

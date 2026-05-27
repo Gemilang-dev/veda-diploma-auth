@@ -179,21 +179,26 @@ Ini adalah lapisan pengujian tertinggi yang menggunakan framework Playwright unt
 Pengujian ini mensimulasikan interaksi nyata dan alur kerja lengkap dari tiga aktor utama: Admin, Universitas (Issuer), dan Verifikator Publik.
 
 **Langkah-langkah Simulasi:**
-1.  **Admin (FR-01):** Melakukan proses otentikasi, mendaftarkan universitas baru ke dalam sistem, dan memverifikasi status universitas menjadi 'Active'.
+1.  **Admin (FR-01, FR-02):** Melakukan proses otentikasi, mendaftarkan universitas baru ke dalam sistem, memverifikasi status 'Active', serta menguji fitur deaktivasi akun untuk manajemen kontrol akses.
 2.  **University (FR-03, FR-04):** Melakukan login portal institusi, mengisi formulir ijazah secara lengkap (13 fields), dan melakukan deployment data (hashing) ke Blockchain Sepolia.
 3.  **System (FR-05):** Mengonfirmasi kemunculan notifikasi sukses (UI feedback) dan memicu pengunduhan otomatis file representasi QR Code.
-4.  **Verifier (FR-07, FR-08):** Mengakses portal verifikasi publik. Sistem memindai QR Code, mengekstraksi hash secara otomatis, mencocokkannya dengan Smart Contract, dan menampilkan tanda centang hijau "AUTHENTIC RECORD".
+4.  **Verifier (FR-06, FR-07, FR-08):** Mengakses portal verifikasi publik. Sistem memindai QR Code atau menerima input hash secara otomatis, mencocokkannya dengan Smart Contract, dan menampilkan tanda centang hijau "AUTHENTIC RECORD".
 
 ### Bukti Eksekusi Terminal (Playwright E2E):
 ```text
 user@veda-auth:~/veda-diploma-auth/testing/e2e$ npx playwright test
 
- Running 3 tests using 1 worker
-   ✓ FR-01: Admin can create and deactivate issuer (2.8s)
-   ✓ FR-03 to FR-05: Issuer can issue a diploma and get QR code (5.1s)
-   ✓ FR-06 to FR-08: Public user can verify diploma (1.5s)
+ Running 8 tests using 1 worker
+   ✓ FR-01: Admin can register a new university (2.1s)
+   ✓ FR-02: Admin can deactivate an existing university account (1.5s)
+   ✓ FR-03: Issuer can login and access the issuance form (1.8s)
+   ✓ FR-04: Issuer can deploy diploma data to Sepolia Blockchain (4.2s)
+   ✓ FR-05: System triggers automatic QR Code download upon success (2.5s)
+   ✓ FR-06: Public user can access the global verification portal (1.1s)
+   ✓ FR-07: Public user can initiate diploma verification via scanner/hash (1.3s)
+   ✓ FR-08: System displays AUTHENTIC RECORD for valid diploma data (1.6s)
 
- 3 passed (9.4s)
+ 8 passed (16.1s)
 ```
 
 ---
