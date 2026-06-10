@@ -18,11 +18,11 @@ services:
           property: connectionString
 
   # 2. Frontend (React + Vite)
-  - type: static
+  - type: web
     name: veda-frontend
     env: static
     buildCommand: npm install && npm run build
-    publishPath: veda_frontend/dist
+    staticPublishPath: veda_frontend/dist
     envVars:
       - key: VITE_API_BASE_URL
         fromService:
