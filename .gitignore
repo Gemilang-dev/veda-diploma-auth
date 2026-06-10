@@ -26,6 +26,7 @@ veda_backend/venv/
 *.db
 test_results_backend.txt
 .pytest_cache/
+BAB_4_IMPLEMENTASI.md
 .coverage
 .coverage.*
 htmlcov/

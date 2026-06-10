@@ -46,7 +46,6 @@ export default function App() {
           <Route path="users" element={<UserManagement />} />
           <Route path="issue" element={<IssueDiploma />} />
           <Route path="verify" element={<VerifyDocument />} />
-          <Route path="settings" element={<UnderConstruction title="System Settings" />} />
         </Route>
 
         {/* Fallback if URL is not found, redirect to Home */}

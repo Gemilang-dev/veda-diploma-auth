@@ -15,7 +15,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS Configuration (Required for React Frontend to access this API)
+# CORS Configuration 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], # In production, replace with your frontend domain
