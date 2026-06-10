@@ -1,12 +1,11 @@
-services:
-  # 1. Database PostgreSQL
-  - type: database
-    name: veda-db
+databases:
+  - name: veda-db
     databaseName: veda
     user: veda_user
     plan: free
 
-  # 2. Backend API (FastAPI)
+services:
+  # 1. Backend API (FastAPI)
   - type: web
     name: veda-backend
     env: python
@@ -17,9 +16,8 @@ services:
         fromDatabase:
           name: veda-db
           property: connectionString
-      # Tambahkan variabel lain di sini jika diperlukan (misal: WEB3_PROVIDER)
 
-  # 3. Frontend (React + Vite)
+  # 2. Frontend (React + Vite)
   - type: static
     name: veda-frontend
     env: static
@@ -27,8 +25,7 @@ services:
     publishPath: veda_frontend/dist
     envVars:
       - key: VITE_API_BASE_URL
-        fromStack:
+        fromService:
           type: web
           name: veda-backend
           property: url
-        value: ${VITE_API_BASE_URL}/api
