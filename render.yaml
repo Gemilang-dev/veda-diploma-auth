@@ -25,7 +25,5 @@ services:
     staticPublishPath: veda_frontend/dist
     envVars:
       - key: VITE_API_BASE_URL
-        fromService:
-          type: web
-          name: veda-backend
-          property: url
+        # Ganti URL ini di Dashboard Render jika nama backend Anda berbeda
+        value: https://veda-backend.onrender.com/api
