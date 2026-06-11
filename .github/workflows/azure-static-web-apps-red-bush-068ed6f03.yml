@@ -34,11 +34,12 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_RED_BUSH_068ED6F03 }}
           action: "upload"
-          ###### Repository/Build Configurations ######
-          app_location: "./veda_frontend" 
-          api_location: "" 
-          output_location: "dist" 
-          ###### End of Repository/Build Configurations ######
+          ###### Konfigurasi Build ######
+          app_location: "/veda_frontend"       # Folder sumber kode
+          api_location: ""                   # Kosongkan
+          output_location: "dist"             # Folder hasil build (Vite default)
+          app_build_command: "npm install && npm run build" # Paksa perintah build
+          ###### Akhir Konfigurasi ######
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
