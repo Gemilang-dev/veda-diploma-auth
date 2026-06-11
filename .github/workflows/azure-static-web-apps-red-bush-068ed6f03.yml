@@ -35,10 +35,9 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_RED_BUSH_068ED6F03 }}
           action: "upload"
           ###### Konfigurasi Build ######
-          app_location: "/veda_frontend"       # Folder sumber kode
+          app_location: "veda_frontend"       # Jalur relatif tanpa garis miring di depan
           api_location: ""                   # Kosongkan
-          output_location: "dist"             # Folder hasil build (Vite default)
-          app_build_command: "npm install && npm run build" # Paksa perintah build
+          output_location: "dist"             # Folder hasil build Vite
           ###### Akhir Konfigurasi ######
 
   close_pull_request_job:
