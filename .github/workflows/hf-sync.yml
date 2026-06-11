@@ -17,10 +17,32 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: Sync to Hub
-        uses: huggingface/hub-sync@v0.1.0
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          github_repo_id: ${{ github.repository }}
-          # GANTI: Ganti dengan 'username/nama-space' Anda di Hugging Face
-          huggingface_repo_id: RayiAG/veda-backend-api
-          repo_type: space
+          python-version: '3.11'
+
+      - name: Install huggingface_hub
+        run: pip install huggingface_hub
+
+      - name: Upload to Hugging Face using OIDC
+        run: |
+          python -c "
+          import os
+          from huggingface_hub import HfApi
+          
+          api = HfApi()
+          print('Starting upload to RayiAG/veda-backend-api...')
+          try:
+              api.upload_folder(
+                  folder_path='.',
+                  repo_id='RayiAG/veda-backend-api',
+                  repo_type='space',
+                  path_in_repo='',
+                  ignore_patterns=['.git/*', '.github/*', 'venv/*', '__pycache__/*']
+              )
+              print('Upload successful!')
+          except Exception as e:
+              print(f'Error during upload: {e}')
+              exit(1)
+          "
