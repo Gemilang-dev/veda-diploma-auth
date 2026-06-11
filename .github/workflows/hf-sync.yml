@@ -1,0 +1,26 @@
+name: Sync to Hugging Face Hub
+on:
+  push:
+    branches: [huggingface-backend]
+  workflow_dispatch:
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Sync to Hub
+        uses: huggingface/hub-sync@v1
+        with:
+          github_repo_id: ${{ github.repository }}
+          # GANTI: Ganti dengan 'username/nama-space' Anda di Hugging Face
+          huggingface_repo_id: RayiAG/veda-backend-api
+          repo_type: space
