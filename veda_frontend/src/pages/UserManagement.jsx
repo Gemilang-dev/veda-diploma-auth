@@ -29,7 +29,7 @@ export default function UserManagement() {
   const fetchIssuers = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/issuer/');
+      const response = await api.get('issuer/');
       setIssuers(response.data);
     } catch (err) {
       setError(err.response?.data?.detail || err.message);
@@ -76,7 +76,7 @@ export default function UserManagement() {
     
     const endpoint = editMode 
       ? `/issuer/${selectedId}` 
-      : '/issuer/register';
+      : 'issuer/register';
 
     // Clean up payload (don't send empty password during update)
     const payload = { ...formData };
@@ -84,7 +84,7 @@ export default function UserManagement() {
 
     try {
       if (editMode) {
-        await api.patch(endpoint, payload);
+        await api.patch(endpoint.startsWith('/') ? endpoint.substring(1) : endpoint, payload);
       } else {
         await api.post(endpoint, payload);
       }
@@ -103,7 +103,7 @@ export default function UserManagement() {
     if (!window.confirm('Are you sure you want to delete this account? This cannot be undone if they haven\'t issued any diplomas.')) return;
     
     try {
-      await api.delete(`/issuer/${id}`);
+      await api.delete(`issuer/${id}`);
 
       setSuccess('Account deleted successfully!');
       fetchIssuers();

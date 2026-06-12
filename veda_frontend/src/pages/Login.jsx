@@ -39,8 +39,8 @@ export default function Login() {
     try {
       // 1. Determine Endpoint and Role based on Toggle
       const endpoint = isSuperAdmin 
-        ? '/auth/login' // Super Admin Endpoint
-        : '/issuer/login'; // University Endpoint
+        ? 'auth/login' // Super Admin Endpoint
+        : 'issuer/login'; // University Endpoint
 
       const userRole = isSuperAdmin ? 'admin' : 'university';
 
@@ -95,7 +95,7 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
-      const response = await api.post('/auth/google-login', { 
+      const response = await api.post('auth/google-login', { 
         token: credentialResponse.credential 
       });
 
