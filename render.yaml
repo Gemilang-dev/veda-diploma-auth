@@ -9,10 +9,12 @@ services:
   # Backend (FastAPI)
   - type: web
     name: veda-backend
+    plan: free
     env: python
     rootDir: .
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn veda_backend.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
+    # Reduced workers to 2 to stay within Free Plan memory limits (512MB)
+    startCommand: gunicorn veda_backend.main:app --workers 2 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -24,7 +26,6 @@ services:
         value: HS256
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: 30
-      # Blockchain related
       - key: WEB3_PROVIDER_URL
         value: https://rpc.ankr.com/eth_sepolia
       - key: PRIVATE_KEY
@@ -37,6 +38,7 @@ services:
   # Frontend (Vite)
   - type: web
     name: veda-frontend
+    plan: free
     env: static
     rootDir: veda_frontend
     buildCommand: npm install && npm run build
