@@ -1,3 +1,4 @@
+import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, status, Form
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
@@ -51,11 +52,11 @@ def create_access_token(data: dict):
 
 # Helper function to compare plain password vs hashed password in database
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password[:72], hashed_password)
+    return bcrypt.checkpw(plain_password.encode("utf-8")[:72], hashed_password.encode("utf-8"))
 
 # Helper function to hash passwords
 def get_password_hash(password: str):
-    return pwd_context.hash(password[:72])
+    return bcrypt.hashpw(password.encode("utf-8")[:72], bcrypt.gensalt()).decode("utf-8")
 
 # SECURITY FUNCTION: Verify and extract JWT Token from Frontend
 def get_current_admin(token: str = Depends(oauth2_scheme_admin), db: Session = Depends(get_db)):
