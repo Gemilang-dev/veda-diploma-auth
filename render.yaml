@@ -1,11 +1,10 @@
-services:
-  # Database (PostgreSQL)
-  - type: database
-    name: veda-db
+databases:
+  - name: veda-db
     databaseName: veda
     user: veda_user
     plan: free
 
+services:
   # Backend (FastAPI)
   - type: web
     name: veda-backend
@@ -13,7 +12,6 @@ services:
     env: python
     rootDir: .
     buildCommand: pip install -r requirements.txt
-    # Reduced workers to 2 to stay within Free Plan memory limits (512MB)
     startCommand: gunicorn veda_backend.main:app --workers 2 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
     envVars:
       - key: DATABASE_URL
