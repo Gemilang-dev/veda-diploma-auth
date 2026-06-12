@@ -8,8 +8,7 @@ services:
   # Backend (FastAPI)
   - type: web
     name: veda-backend
-    plan: free
-    env: python
+    runtime: python
     rootDir: .
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn veda_backend.main:app --workers 2 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
@@ -36,8 +35,7 @@ services:
   # Frontend (Vite)
   - type: web
     name: veda-frontend
-    plan: free
-    env: static
+    runtime: static
     rootDir: veda_frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
