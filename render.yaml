@@ -1,0 +1,53 @@
+services:
+  # Database (PostgreSQL)
+  - type: database
+    name: veda-db
+    databaseName: veda
+    user: veda_user
+    plan: free
+
+  # Backend (FastAPI)
+  - type: web
+    name: veda-backend
+    env: python
+    rootDir: .
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn veda_backend.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: veda-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 30
+      # Blockchain related
+      - key: WEB3_PROVIDER_URL
+        value: https://rpc.ankr.com/eth_sepolia
+      - key: PRIVATE_KEY
+        sync: false
+      - key: DIPLOMA_CONTRACT_ADDRESS
+        sync: false
+      - key: ISSUER_CONTRACT_ADDRESS
+        sync: false
+
+  # Frontend (Vite)
+  - type: web
+    name: veda-frontend
+    env: static
+    rootDir: veda_frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: veda-backend
+          property: url
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
