@@ -13,3 +13,4 @@ qrcode[pil]==7.4.2
 google-auth==2.23.4
 setuptools<70
 python-dotenv==1.0.0
+bcrypt==4.0.1

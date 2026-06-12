@@ -51,11 +51,11 @@ def create_access_token(data: dict):
 
 # Helper function to compare plain password vs hashed password in database
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    return pwd_context.verify(plain_password[:72], hashed_password)
 
 # Helper function to hash passwords
 def get_password_hash(password: str):
-    return pwd_context.hash(password)
+    return pwd_context.hash(password[:72])
 
 # SECURITY FUNCTION: Verify and extract JWT Token from Frontend
 def get_current_admin(token: str = Depends(oauth2_scheme_admin), db: Session = Depends(get_db)):
