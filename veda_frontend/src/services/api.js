@@ -1,7 +1,14 @@
 import axios from 'axios';
 
 // Axios base configuration
-const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const envBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
+// Render 'host' property doesn't include protocol, so we add https:// if it looks like a domain
+let rawBaseUrl = envBaseUrl;
+if (!rawBaseUrl.startsWith('http://') && !rawBaseUrl.startsWith('https://')) {
+    rawBaseUrl = `https://${rawBaseUrl}`;
+}
+
 const API_BASE_URL = rawBaseUrl.endsWith('/api') ? rawBaseUrl : `${rawBaseUrl}/api`;
 
 const api = axios.create({
