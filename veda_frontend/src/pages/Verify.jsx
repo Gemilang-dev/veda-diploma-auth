@@ -57,6 +57,12 @@ const Verify = () => {
 
     // CORE VERIFICATION LOGIC: Hybrid Approach (Blockchain + MySQL)
     const handleVerification = async (hashToVerify) => {
+        if (!CONTRACT_ADDRESS) {
+            setVerificationStatus('invalid');
+            setErrorMessage("Configuration Error: Blockchain Contract Address is missing. Please check the environment variables in Render Dashboard.");
+            return;
+        }
+
         setVerificationStatus('loading');
         setErrorMessage('');
         setSuccessMessage('');

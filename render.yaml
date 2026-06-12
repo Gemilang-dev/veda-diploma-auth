@@ -45,6 +45,10 @@ services:
           type: web
           name: veda-backend
           property: host
+      - key: VITE_DIPLOMA_REGISTRY_ADDRESS
+        sync: false
+      - key: VITE_ISSUER_REGISTRY_ADDRESS
+        sync: false
     routes:
       - type: rewrite
         source: /*
