@@ -6,6 +6,7 @@ import {
   CircularProgress, Alert, MenuItem
 } from '@mui/material';
 import { FaUserPlus, FaEdit, FaTrash, FaUserShield } from 'react-icons/fa';
+import api from '../services/api';
 
 export default function UserManagement() {
   const [issuers, setIssuers] = useState([]);
@@ -25,19 +26,13 @@ export default function UserManagement() {
     status: 'Active'
   });
 
-  const token = localStorage.getItem('veda_token');
-
   const fetchIssuers = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/issuer/', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to fetch university accounts');
-      const data = await response.json();
-      setIssuers(data);
+      const response = await api.get('/issuer/');
+      setIssuers(response.data);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.detail || err.message);
     } finally {
       setLoading(false);
     }
@@ -78,27 +73,21 @@ export default function UserManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    const method = editMode ? 'PATCH' : 'POST';
-    const url = editMode 
-      ? `http://127.0.0.1:8000/api/issuer/${selectedId}` 
-      : 'http://127.0.0.1:8000/api/issuer/register';
+    
+    const endpoint = editMode 
+      ? `/issuer/${selectedId}` 
+      : '/issuer/register';
 
     // Clean up payload (don't send empty password during update)
     const payload = { ...formData };
     if (editMode && !payload.password) delete payload.password;
 
     try {
-      const response = await fetch(url, {
-        method: method,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || 'Operation failed');
+      if (editMode) {
+        await api.patch(endpoint, payload);
+      } else {
+        await api.post(endpoint, payload);
+      }
 
       setSuccess(editMode ? 'Account updated successfully!' : 'University registered successfully!');
       fetchIssuers();
@@ -106,7 +95,7 @@ export default function UserManagement() {
       
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.detail || err.message);
     }
   };
 
@@ -114,21 +103,13 @@ export default function UserManagement() {
     if (!window.confirm('Are you sure you want to delete this account? This cannot be undone if they haven\'t issued any diplomas.')) return;
     
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/issuer/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.detail || 'Failed to delete');
-      }
+      await api.delete(`/issuer/${id}`);
 
       setSuccess('Account deleted successfully!');
       fetchIssuers();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.detail || err.message);
       setTimeout(() => setError(''), 5000);
     }
   };

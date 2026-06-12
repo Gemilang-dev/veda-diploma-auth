@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Paper, Typography, TextField, Button, CircularProgress, Divider } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
+import api from '../services/api';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -36,10 +37,10 @@ export default function Login() {
     setError('');
 
     try {
-      // 1. Determine API URL and Role based on Toggle
-      const apiUrl = isSuperAdmin 
-        ? 'http://127.0.0.1:8000/api/auth/login' // Super Admin Endpoint
-        : 'http://127.0.0.1:8000/api/issuer/login'; // University Endpoint
+      // 1. Determine Endpoint and Role based on Toggle
+      const endpoint = isSuperAdmin 
+        ? '/auth/login' // Super Admin Endpoint
+        : '/issuer/login'; // University Endpoint
 
       const userRole = isSuperAdmin ? 'admin' : 'university';
 
@@ -48,18 +49,12 @@ export default function Login() {
       formData.append('username', emailOrUsername); 
       formData.append('password', password);
 
-      // 3. Call Backend API
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData,
+      // 3. Call Backend API using axios 'api' service
+      const response = await api.post(endpoint, formData, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || "An error occurred during login");
-      }
+      const data = response.data;
 
       // 4. Store Token and Role in Browser Local Storage
       localStorage.setItem('veda_token', data.access_token);
@@ -87,7 +82,7 @@ export default function Login() {
       navigate(redirectPath);
 
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.detail || err.message);
     } finally {
       setLoading(false);
     }
@@ -100,17 +95,11 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/google-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: credentialResponse.credential }),
+      const response = await api.post('/auth/google-login', { 
+        token: credentialResponse.credential 
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || "Google Login failed");
-      }
+      const data = response.data;
 
       localStorage.setItem('veda_token', data.access_token);
       localStorage.setItem('veda_role', 'university');
@@ -128,7 +117,7 @@ export default function Login() {
 
       navigate('/university/dashboard');
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.detail || err.message);
     } finally {
       setLoading(false);
     }
