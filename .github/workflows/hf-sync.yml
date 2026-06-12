@@ -22,18 +22,39 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install huggingface_hub
-        run: pip install huggingface_hub
+      - name: Install dependencies
+        run: pip install huggingface_hub requests
 
       - name: Upload to Hugging Face using OIDC
         run: |
           python -c "
           import os
-          from huggingface_hub import HfApi
+          import requests
+          from huggingface_hub import HfApi, login
           
-          api = HfApi()
-          print('Starting upload to RayiAG/veda-backend-api...')
+          def get_oidc_token():
+              # GitHub Actions provides these env vars for OIDC
+              request_url = os.environ.get('ACTIONS_ID_TOKEN_REQUEST_URL')
+              request_token = os.environ.get('ACTIONS_ID_TOKEN_REQUEST_TOKEN')
+              if not request_url or not request_token:
+                  raise Exception('OIDC environment variables not found. Make sure permissions id-token: write is set.')
+              
+              # Request the JWT from GitHub
+              response = requests.get(
+                  f'{request_url}&audience=https://huggingface.co',
+                  headers={'Authorization': f'Bearer {request_token}'}
+              )
+              response.raise_for_status()
+              return response.json().get('value')
+
           try:
+              print('Requesting OIDC token from GitHub...')
+              oidc_token = get_oidc_token()
+              
+              # Use the OIDC token to initialize HfApi
+              api = HfApi(token=oidc_token)
+              
+              print('Authenticated with Hugging Face via OIDC. Starting upload...')
               api.upload_folder(
                   folder_path='.',
                   repo_id='RayiAG/veda-backend-api',
@@ -43,6 +64,8 @@ jobs:
               )
               print('Upload successful!')
           except Exception as e:
-              print(f'Error during upload: {e}')
+              print(f'Error: {e}')
+              import traceback
+              traceback.print_exc()
               exit(1)
           "
