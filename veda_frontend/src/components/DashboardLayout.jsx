@@ -32,7 +32,7 @@ export default function DashboardLayout({ role }) {
       { title: 'User Management', path: '/admin/users' },
       { title: 'Issue Diploma', path: '/admin/issue' },
       { title: 'Verify Document', path: '/admin/verify' },
-      { title: 'Settings', path: '/admin/settings' }
+      // { title: 'Settings', path: '/admin/settings' }
     ];
     return [];
   };

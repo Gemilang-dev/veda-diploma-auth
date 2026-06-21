@@ -32,16 +32,26 @@ if SQLALCHEMY_DATABASE_URL:
     # Handle MySQL (Aiven)
     if SQLALCHEMY_DATABASE_URL.startswith("mysql://"):
         SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)
-        engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args=get_ssl_args())
+        engine = create_engine(
+            SQLALCHEMY_DATABASE_URL, 
+            connect_args=get_ssl_args(),
+            pool_pre_ping=True,
+            pool_recycle=300
+        )
     else:
-        engine = create_engine(SQLALCHEMY_DATABASE_URL)
+        # Standard PostgreSQL or other databases
+        engine = create_engine(
+            SQLALCHEMY_DATABASE_URL,
+            pool_pre_ping=True,
+            pool_recycle=300
+        )
 else:
     # Fallback to local MySQL
     SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:@localhost:3306/veda"
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL, 
         pool_pre_ping=True,
-        pool_recycle=3600
+        pool_recycle=300
     )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
